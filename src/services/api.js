@@ -1,7 +1,12 @@
 import axios from 'axios';
 
+// Use a variável de ambiente ou fallback para desenvolvimento
+const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+
+console.log('🔧 API Base URL:', baseURL); // Importante para debug
+
 const api = axios.create({
-    baseURL: 'http://localhost:3000/api', // URL do seu backend
+    baseURL: baseURL, // URL do seu backend
     timeout: 10000, // 10 segundos de timeout
     headers: {
         'Content-Type': 'application/json',
