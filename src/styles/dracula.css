@@ -1,0 +1,172 @@
+/* Tema Dracula */
+.dracula {
+  --bg-primary: #282a36;
+  --bg-secondary: #44475a;
+  --text-primary: #f8f8f2;
+  --text-secondary: #bd93f9;
+  --text-muted: #6272a4;
+  --border-color: #6272a4;
+  --accent-primary: #ff79c6;
+  --accent-secondary: #8be9fd;
+  --success: #50fa7b;
+  --warning: #f1fa8c;
+  --danger: #ff5555;
+  --info: #8be9fd;
+  --card-bg: #44475a;
+  --input-bg: #282a36;
+  --input-border: #6272a4;
+  --hover-bg: #6272a4;
+}
+
+.dracula body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* Cards */
+.dracula .bg-white {
+  background-color: var(--card-bg) !important;
+}
+
+.dracula .bg-gray-50,
+.dracula .bg-gray-100 {
+  background-color: var(--bg-secondary) !important;
+}
+
+/* Textos */
+.dracula .text-gray-900,
+.dracula .text-gray-800,
+.dracula .text-gray-700 {
+  color: var(--text-primary) !important;
+}
+
+.dracula .text-gray-600,
+.dracula .text-gray-500 {
+  color: var(--text-secondary) !important;
+}
+
+.dracula .text-gray-400 {
+  color: var(--text-muted) !important;
+}
+
+/* Links e botões */
+.dracula a {
+  color: var(--accent-secondary);
+}
+
+.dracula a:hover {
+  color: var(--accent-primary);
+}
+
+.dracula .text-blue-600 {
+  color: var(--accent-secondary) !important;
+}
+
+.dracula .text-blue-700 {
+  color: var(--accent-primary) !important;
+}
+
+.dracula .bg-blue-600 {
+  background-color: var(--accent-secondary) !important;
+}
+
+.dracula .bg-blue-700 {
+  background-color: var(--accent-primary) !important;
+}
+
+/* Status colors */
+.dracula .bg-green-100 {
+  background-color: #50fa7b20 !important;
+}
+.dracula .text-green-600 {
+  color: var(--success) !important;
+}
+
+.dracula .bg-red-100 {
+  background-color: #ff555520 !important;
+}
+.dracula .text-red-600 {
+  color: var(--danger) !important;
+}
+
+.dracula .bg-yellow-100 {
+  background-color: #f1fa8c20 !important;
+}
+.dracula .text-yellow-600 {
+  color: var(--warning) !important;
+}
+
+/* Inputs */
+.dracula input,
+.dracula select,
+.dracula textarea {
+  background-color: var(--input-bg) !important;
+  border-color: var(--input-border) !important;
+  color: var(--text-primary) !important;
+}
+
+.dracula input:focus,
+.dracula select:focus,
+.dracula textarea:focus {
+  border-color: var(--accent-secondary) !important;
+  ring-color: var(--accent-secondary) !important;
+}
+
+/* Bordas */
+.dracula .border {
+  border-color: var(--border-color) !important;
+}
+
+.dracula .border-gray-200,
+.dracula .border-gray-300 {
+  border-color: var(--border-color) !important;
+}
+
+/* Navbar específica */
+.dracula nav.bg-white {
+  background-color: var(--bg-secondary) !important;
+}
+
+.dracula nav .bg-gray-50 {
+  background-color: var(--bg-primary) !important;
+}
+
+/* Tabelas */
+.dracula thead {
+  background-color: var(--bg-primary) !important;
+}
+
+.dracula tbody tr:hover {
+  background-color: var(--hover-bg) !important;
+}
+
+/* Cards de apartamento no mapa */
+.dracula .bg-green-100 {
+  background-color: #50fa7b30 !important;
+  border-color: var(--success) !important;
+  color: var(--success) !important;
+}
+
+.dracula .bg-red-100 {
+  background-color: #ff555530 !important;
+  border-color: var(--danger) !important;
+  color: var(--danger) !important;
+}
+
+.dracula .bg-yellow-100 {
+  background-color: #f1fa8c30 !important;
+  border-color: var(--warning) !important;
+  color: var(--warning) !important;
+}
+
+.dracula .bg-blue-100 {
+  background-color: #8be9fd30 !important;
+  border-color: var(--info) !important;
+  color: var(--info) !important;
+}
+
+.dracula .bg-purple-100 {
+  background-color: #bd93f930 !important;
+  border-color: var(--text-secondary) !important;
+  color: var(--text-secondary) !important;
+}

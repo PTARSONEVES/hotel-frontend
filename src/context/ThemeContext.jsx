@@ -1,52 +1,62 @@
-import React, { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
-const ThemeContext = createContext()
+const ThemeContext = createContext();
 
 export function ThemeProvider({ children }) {
-  const [darkMode, setDarkMode] = useState(() => {
-    const savedTheme = localStorage.getItem('theme')
-    console.log('📌 Tema salvo no localStorage:', savedTheme)
-    
-    if (savedTheme) {
-      return savedTheme === 'dark'
+  // Agora armazenamos o tema atual (light, dark, dracula)
+  const [theme, setTheme] = useState(() => {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme && ['light', 'dark', 'dracula'].includes(savedTheme)) {
+      return savedTheme;
     }
-    
-    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    console.log('📌 Preferência do sistema:', systemPrefersDark)
-    return systemPrefersDark
-  })
+    // Detectar preferência do sistema
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
 
   useEffect(() => {
-    console.log('📌 darkMode mudou para:', darkMode)
-    console.log('📌 Elemento html antes:', document.documentElement.classList.contains('dark'))
+    // Remover todas as classes de tema anteriores
+    document.documentElement.classList.remove('light', 'dark', 'dracula');
     
-    if (darkMode) {
-      document.documentElement.classList.add('dark')
-      localStorage.setItem('theme', 'dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-      localStorage.setItem('theme', 'light')
-    }
+    // Adicionar a nova classe de tema
+    document.documentElement.classList.add(theme);
     
-    console.log('📌 Elemento html depois:', document.documentElement.classList.contains('dark'))
-  }, [darkMode])
+    // Salvar no localStorage
+    localStorage.setItem('theme', theme);
+    
+    console.log('🎨 Tema alterado para:', theme);
+  }, [theme]);
 
-  const toggleDarkMode = () => {
-    console.log('📌 toggleDarkMode chamado')
-    setDarkMode(prev => !prev)
-  }
+  const setThemeMode = (newTheme) => {
+    if (['light', 'dark', 'dracula'].includes(newTheme)) {
+      setTheme(newTheme);
+    }
+  };
+
+  const toggleTheme = () => {
+    // Ciclo: light → dark → dracula → light
+    const themes = ['light', 'dark', 'dracula'];
+    const currentIndex = themes.indexOf(theme);
+    const nextIndex = (currentIndex + 1) % themes.length;
+    setTheme(themes[nextIndex]);
+  };
 
   return (
-    <ThemeContext.Provider value={{ darkMode, toggleDarkMode }}>
+    <ThemeContext.Provider value={{ 
+      theme, 
+      setThemeMode, 
+      toggleTheme,
+      isDark: theme === 'dark',
+      isDracula: theme === 'dracula'
+    }}>
       {children}
     </ThemeContext.Provider>
-  )
+  );
 }
 
 export const useTheme = () => {
-  const context = useContext(ThemeContext)
+  const context = useContext(ThemeContext);
   if (!context) {
-    throw new Error('useTheme must be used within a ThemeProvider')
+    throw new Error('useTheme must be used within a ThemeProvider');
   }
-  return context
-}
+  return context;
+};
