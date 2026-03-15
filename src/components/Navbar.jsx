@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import ThemeToggle from './ThemeToggle';
+import AlertBell from './AlertBell';
 
 export default function Navbar() {
     const { user, logout } = useAuth();
@@ -163,6 +164,7 @@ export default function Navbar() {
 
                     {/* Área do Usuário, Tema e Logout */}
                     <div className="flex items-center space-x-3">
+                        <AlertBell />
                         <ThemeToggle />
                         
                         {user ? (
