@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Use a variável de ambiente ou fallback para desenvolvimento
-const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const baseURL = import.meta.env.VITE_API_URL || 'https://api.ancorarportodegalinhas.com' || 'http://localhost:3000/api';
 
 console.log('🔧 API Base URL:', baseURL); // Importante para debug
 
