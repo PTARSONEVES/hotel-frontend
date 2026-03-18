@@ -1,82 +1,174 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext';
-import { ThemeProvider } from './context/ThemeContext'; // IMPORTANTE
-import { AccountProvider } from './context/AccountContext';
-import Navbar from './components/Navbar';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { ThemeProvider } from './context/ThemeContext';
+import { AuthProvider } from './context/AuthContext';
+import PrivateRoute from './components/PrivateRoute';
+import NavbarSistema from './components/NavbarSistema'; // <-- NOVO
+
+// Landing Pages (sem navbar)
+import Home from './landing/pages/Home';
+import About from './landing/pages/About';
+import Flats from './landing/pages/Flats';
+import Porto from './landing/pages/Porto';
+import PreBooking from './landing/pages/PreBooking';
 import Login from './pages/Login';
 import Register from './pages/Register';
+
+// Sistema (com navbar)
 import Dashboard from './pages/Dashboard';
-import Accounts from './pages/Accounts';
-import AccountForm from './pages/AccountForm';
-import ForgotPassword from './pages/ForgotPassword';
-import ResetPassword from './pages/ResetPassword';
-import ChangePassword from './pages/ChangePassword';
+import HotelDashboard from './modules/hotel/pages/HotelDashboard';
 import RoomMap from './modules/hotel/pages/RoomMap';
 import RoomList from './modules/hotel/pages/RoomList';
 import BookingList from './modules/hotel/pages/BookingList';
 import GuestList from './modules/hotel/pages/GuestList';
-import AvailabilityCalendar from './modules/hotel/pages/AvailabilityCalendar';
-import HotelDashboard from './modules/hotel/pages/HotelDashboard';
-import Consumption from './modules/hotel/pages/Consumption';
-import Reports from './modules/hotel/pages/Reports';
+import Accounts from './pages/Accounts';
+import AccountForm from './pages/AccountForm';
+import AdminLeads from './pages/admin/Leads';
+import AdminUsers from './pages/admin/Users';
+import MyBookings from './pages/hospede/MyBookings';
+import MyProfile from './pages/hospede/MyProfile';
+import ChangePassword from './pages/ChangePassword';
 
-function PrivateRoute({ children }) {
-    const { user, loading } = useAuth();
-    
-    if (loading) {
-        return <div className="min-h-screen flex items-center justify-center">Carregando...</div>;
-    }
-    
-    return user ? children : <Navigate to="/login" />;
-}
-
-function AppContent() {
-    const { user } = useAuth();
-    
+// Layout para rotas do sistema (com navbar)
+function SistemaLayout({ children }) {
     return (
-        <div className="min-h-screen bg-gray-100 dark:bg-gray-900 dracula:bg-[#282a36] transition-colors duration-300">
-            <Navbar />
-            <div className="pt-16">
-                <Routes>
-                    {/* Rotas Públicas */}
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/register" element={<Register />} />
-                    <Route path="/forgot-password" element={<ForgotPassword />} />
-                    <Route path="/reset-password" element={<ResetPassword />} />
-                    
-                    {/* Rotas Privadas */}
-                    <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-                    <Route path="/accounts" element={<PrivateRoute><Accounts /></PrivateRoute>} />
-                    <Route path="/accounts/new" element={<PrivateRoute><AccountForm /></PrivateRoute>} />
-                    <Route path="/accounts/edit/:id" element={<PrivateRoute><AccountForm /></PrivateRoute>} />
-                    <Route path="/change-password" element={<PrivateRoute><ChangePassword /></PrivateRoute>} />
-                    
-                    {/* Rotas do Hotel */}
-                    <Route path="/hotel/dashboard" element={<PrivateRoute><HotelDashboard /></PrivateRoute>} />
-                    <Route path="/hotel/map" element={<PrivateRoute><RoomMap /></PrivateRoute>} />
-                    <Route path="/hotel/rooms" element={<PrivateRoute><RoomList /></PrivateRoute>} />
-                    <Route path="/hotel/calendar" element={<PrivateRoute><AvailabilityCalendar /></PrivateRoute>} />
-                    <Route path="/hotel/bookings" element={<PrivateRoute><BookingList /></PrivateRoute>} />
-                    <Route path="/hotel/guests" element={<PrivateRoute><GuestList /></PrivateRoute>} />
-                    <Route path="/hotel/consumption" element={<PrivateRoute><Consumption /></PrivateRoute>} />
-                    <Route path="/hotel/reports" element={<PrivateRoute><Reports /></PrivateRoute>} />
-                    
-                    <Route path="/" element={<Navigate to="/dashboard" />} />
-                </Routes>
+        <>
+            <NavbarSistema />
+            <div className="pt-16"> {/* Espaço para a navbar fixa */}
+                {children}
             </div>
-        </div>
+        </>
     );
 }
 
 function App() {
     return (
         <BrowserRouter>
-            <ThemeProvider>  {/* ThemeProvider envolvendo TUDO */}
+            <ThemeProvider>
                 <AuthProvider>
-                    <AccountProvider>
-                        <AppContent />
-                    </AccountProvider>
+                    <Routes>
+                        {/* Landing Pages (sem navbar) */}
+                        <Route path="/" element={<Home />} />
+                        <Route path="/sobre" element={<About />} />
+                        <Route path="/flats" element={<Flats />} />
+                        <Route path="/porto-de-galinhas" element={<Porto />} />
+                        <Route path="/pre-reserva" element={<PreBooking />} />
+                        <Route path="/login" element={<Login />} />
+                        <Route path="/register" element={<Register />} />
+
+                        {/* Sistema (com navbar) */}
+                        <Route path="/dashboard" element={
+                            <PrivateRoute>
+                                <SistemaLayout>
+                                    <Dashboard />
+                                </SistemaLayout>
+                            </PrivateRoute>
+                        } />
+                        
+                        <Route path="/hotel/*" element={
+                            <PrivateRoute requiredRole="colaborador">
+                                <SistemaLayout>
+                                    <HotelDashboard />
+                                </SistemaLayout>
+                            </PrivateRoute>
+                        } />
+                        
+                        <Route path="/hotel/map" element={
+                            <PrivateRoute requiredRole="colaborador">
+                                <SistemaLayout>
+                                    <RoomMap />
+                                </SistemaLayout>
+                            </PrivateRoute>
+                        } />
+                        
+                        <Route path="/hotel/rooms" element={
+                            <PrivateRoute requiredRole="colaborador">
+                                <SistemaLayout>
+                                    <RoomList />
+                                </SistemaLayout>
+                            </PrivateRoute>
+                        } />
+                        
+                        <Route path="/hotel/bookings" element={
+                            <PrivateRoute requiredPermission="ver_todas_reservas">
+                                <SistemaLayout>
+                                    <BookingList />
+                                </SistemaLayout>
+                            </PrivateRoute>
+                        } />
+                        
+                        <Route path="/hotel/guests" element={
+                            <PrivateRoute requiredPermission="ver_hospedes">
+                                <SistemaLayout>
+                                    <GuestList />
+                                </SistemaLayout>
+                            </PrivateRoute>
+                        } />
+                        
+                        <Route path="/accounts" element={
+                            <PrivateRoute requiredPermission="ver_todas_contas">
+                                <SistemaLayout>
+                                    <Accounts />
+                                </SistemaLayout>
+                            </PrivateRoute>
+                        } />
+                        
+                        <Route path="/accounts/new" element={
+                            <PrivateRoute requiredPermission="criar_conta">
+                                <SistemaLayout>
+                                    <AccountForm />
+                                </SistemaLayout>
+                            </PrivateRoute>
+                        } />
+                        
+                        <Route path="/accounts/edit/:id" element={
+                            <PrivateRoute requiredPermission="editar_conta">
+                                <SistemaLayout>
+                                    <AccountForm />
+                                </SistemaLayout>
+                            </PrivateRoute>
+                        } />
+                        
+                        <Route path="/admin/leads" element={
+                            <PrivateRoute requiredPermission="ver_leads">
+                                <SistemaLayout>
+                                    <AdminLeads />
+                                </SistemaLayout>
+                            </PrivateRoute>
+                        } />
+                        
+                        <Route path="/admin/users" element={
+                            <PrivateRoute requiredPermission="gerenciar_usuarios">
+                                <SistemaLayout>
+                                    <AdminUsers />
+                                </SistemaLayout>
+                            </PrivateRoute>
+                        } />
+                        
+                        <Route path="/my-bookings" element={
+                            <PrivateRoute requiredRole="hospede">
+                                <SistemaLayout>
+                                    <MyBookings />
+                                </SistemaLayout>
+                            </PrivateRoute>
+                        } />
+                        
+                        <Route path="/my-profile" element={
+                            <PrivateRoute requiredRole="hospede">
+                                <SistemaLayout>
+                                    <MyProfile />
+                                </SistemaLayout>
+                            </PrivateRoute>
+                        } />
+                        
+                        <Route path="/change-password" element={
+                            <PrivateRoute>
+                                <SistemaLayout>
+                                    <ChangePassword />
+                                </SistemaLayout>
+                            </PrivateRoute>
+                        } />
+                    </Routes>
                 </AuthProvider>
             </ThemeProvider>
         </BrowserRouter>

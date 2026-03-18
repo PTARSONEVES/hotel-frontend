@@ -16,10 +16,18 @@ export default function AlertBell() {
 
     const loadAlerts = async () => {
         try {
+            const token = localStorage.getItem('token');
+            if (!token) return; // Não tenta carregar se não estiver logado
+            
             const response = await api.get('/hotel/alerts');
-            setAlerts(response.data);
+            // Garantir que seja array
+            const alertsData = Array.isArray(response.data) ? response.data : [];
+            setAlerts(alertsData);
         } catch (error) {
-            console.error('Erro ao carregar alertas:', error);
+            // Ignora erros 401 silenciosamente
+            if (error.response?.status !== 401) {
+                console.error('❌ Erro ao carregar alertas:', error);
+            }
         }
     };
 
@@ -28,9 +36,14 @@ export default function AlertBell() {
             await api.post(`/hotel/alerts/${id}/resolve`);
             setAlerts(alerts.filter(a => a.id !== id));
         } catch (error) {
-            console.error('Erro ao resolver alerta:', error);
+            console.error('❌ Erro ao resolver alerta:', error);
         }
     };
+
+    // Se não estiver logado, não renderiza nada
+    if (!localStorage.getItem('token')) {
+        return null;
+    }
 
     const getPriorityColor = (priority) => {
         switch(priority) {
@@ -70,7 +83,7 @@ export default function AlertBell() {
                 )}
             </button>
 
-            {showDropdown && (
+            {showDropdown && alerts.length > 0 && (
                 <div className={`absolute right-0 mt-2 w-96 max-h-96 overflow-y-auto rounded-lg shadow-lg z-50
                     ${theme === 'dracula' ? 'bg-[#282a36] border border-[#44475a]' : 
                       theme === 'dark' ? 'bg-gray-800 border border-gray-700' : 
@@ -83,47 +96,41 @@ export default function AlertBell() {
                         Alertas ({alerts.length})
                     </div>
 
-                    {alerts.length === 0 ? (
-                        <div className="p-4 text-center text-gray-500">
-                            Nenhum alerta no momento
-                        </div>
-                    ) : (
-                        alerts.map(alert => (
-                            <div key={alert.id} className={`p-3 border-b last:border-b-0
-                                ${theme === 'dracula' ? 'border-[#44475a] hover:bg-[#44475a]' : 
-                                  theme === 'dark' ? 'border-gray-700 hover:bg-gray-700' : 
-                                  'border-gray-200 hover:bg-gray-50'}`}>
-                                <div className="flex items-start space-x-2">
-                                    <span className="text-xl">{getTypeIcon(alert.type)}</span>
-                                    <div className="flex-1">
-                                        <div className="flex items-center space-x-2 mb-1">
-                                            <span className={`px-2 py-0.5 text-xs text-white rounded-full ${getPriorityColor(alert.priority)}`}>
-                                                {alert.priority}
-                                            </span>
-                                            <span className="text-xs text-gray-500">
-                                                {new Date(alert.created_at).toLocaleDateString('pt-BR')}
-                                            </span>
-                                        </div>
-                                        <p className={`text-sm ${
-                                            theme === 'dracula' ? 'text-[#f8f8f2]' : 
-                                            theme === 'dark' ? 'text-gray-300' : 
-                                            'text-gray-700'
-                                        }`}>
-                                            {alert.message}
-                                        </p>
-                                        <div className="flex justify-end mt-2">
-                                            <button
-                                                onClick={() => resolveAlert(alert.id)}
-                                                className="text-xs text-blue-600 hover:underline"
-                                            >
-                                                Marcar como resolvido
-                                            </button>
-                                        </div>
+                    {alerts.map(alert => (
+                        <div key={alert.id} className={`p-3 border-b last:border-b-0
+                            ${theme === 'dracula' ? 'border-[#44475a] hover:bg-[#44475a]' : 
+                              theme === 'dark' ? 'border-gray-700 hover:bg-gray-700' : 
+                              'border-gray-200 hover:bg-gray-50'}`}>
+                            <div className="flex items-start space-x-2">
+                                <span className="text-xl">{getTypeIcon(alert.type)}</span>
+                                <div className="flex-1">
+                                    <div className="flex items-center space-x-2 mb-1">
+                                        <span className={`px-2 py-0.5 text-xs text-white rounded-full ${getPriorityColor(alert.priority)}`}>
+                                            {alert.priority}
+                                        </span>
+                                        <span className="text-xs text-gray-500">
+                                            {new Date(alert.created_at).toLocaleDateString('pt-BR')}
+                                        </span>
+                                    </div>
+                                    <p className={`text-sm ${
+                                        theme === 'dracula' ? 'text-[#f8f8f2]' : 
+                                        theme === 'dark' ? 'text-gray-300' : 
+                                        'text-gray-700'
+                                    }`}>
+                                        {alert.message}
+                                    </p>
+                                    <div className="flex justify-end mt-2">
+                                        <button
+                                            onClick={() => resolveAlert(alert.id)}
+                                            className="text-xs text-blue-600 hover:underline"
+                                        >
+                                            Marcar como resolvido
+                                        </button>
                                     </div>
                                 </div>
                             </div>
-                        ))
-                    )}
+                        </div>
+                    ))}
                 </div>
             )}
         </div>
