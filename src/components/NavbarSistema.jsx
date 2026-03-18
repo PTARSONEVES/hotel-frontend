@@ -12,6 +12,7 @@ export default function NavbarSistema() {
     const location = useLocation();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+    const [openSubmenu, setOpenSubmenu] = useState(null);
 
     const handleLogout = () => {
         logout();
@@ -79,9 +80,47 @@ export default function NavbarSistema() {
         },
         {
             label: 'Financeiro',
-            path: '/accounts',
+            path: '/financial',
             icon: '💰',
             show: hasPermission('ver_todas_contas')
+        },
+        {
+            label: 'Manutenção',
+            path: '/maintenance',
+            icon: '🔧',
+            show: hasPermission('ver_manutencao'),
+            submenu: [
+                {
+                    label: 'Dashboard',
+                    path: '/maintenance',
+                    icon: '📊',
+                    show: true
+                },
+                {
+                    label: 'Equipamentos',
+                    path: '/maintenance/equipment',
+                    icon: '⚙️',
+                    show: true
+                },
+                {
+                    label: 'Ordens de Serviço',
+                    path: '/maintenance/work-orders',
+                    icon: '📋',
+                    show: true
+                },
+                {
+                    label: 'Almoxarifado',
+                    path: '/maintenance/stock',
+                    icon: '📦',
+                    show: hasPermission('ver_almoxarifado')
+                },
+                {
+                    label: 'Relatórios',
+                    path: '/maintenance/reports',
+                    icon: '📈',
+                    show: hasPermission('ver_relatorios_manutencao')
+                }
+            ]
         },
         {
             label: 'Leads',
@@ -100,6 +139,12 @@ export default function NavbarSistema() {
             path: '/my-bookings',
             icon: '📋',
             show: user?.role === 'hospede'
+        },
+        {
+            label: 'Manutenção',
+            path: '/maintenance',
+            icon: '🔧',
+            show: hasPermission('ver_manutencao')
         }
     ].filter(item => item.show);
 

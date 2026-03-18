@@ -64,7 +64,7 @@ export default function RoleBasedDashboard() {
         {
             name: 'Financeiro',
             icon: '💰',
-            path: '/accounts',
+            path: '/financial',
             permission: 'ver_todas_contas',
             description: 'Contas a pagar/receber'
         },
