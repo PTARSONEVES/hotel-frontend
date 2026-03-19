@@ -4,6 +4,12 @@ import LandingHeader from '../components/Header';
 import Footer from '../components/Footer';
 import { useTheme } from '../../context/ThemeContext';
 
+import quarto1 from '../assets/images/loft_quarto_001.jpeg';
+import quarto2 from '../assets/images/loft_quarto_002.jpeg';
+import varanda1 from '../assets/images/loft_varanda_001.jpeg';
+import varanda2 from '../assets/images/loft_varanda_002.jpeg';
+
+
 export default function Flats() {
     const { theme } = useTheme();
     const [selectedFlat, setSelectedFlat] = useState(null);
@@ -18,6 +24,7 @@ export default function Flats() {
             size: '35m²',
             amenities: ['Ar condicionado', 'TV LED 32"', 'Wi-Fi', 'Frigobar', 'Cama de casal', 'Banheiro privativo'],
             images: [
+                quarto1,
                 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-4.0.3',
                 'https://images.unsplash.com/photo-1560185009-5bf9f2849488?ixlib=rb-4.0.3',
                 'https://images.unsplash.com/photo-1560185127-6ed189bf02f4?ixlib=rb-4.0.3'
@@ -33,6 +40,7 @@ export default function Flats() {
             size: '50m²',
             amenities: ['Ar condicionado', 'TV LED 42"', 'Wi-Fi', 'Frigobar', 'Cama king size', 'Hidromassagem', 'Varanda', 'Banheiro privativo'],
             images: [
+                quarto2,
                 'https://images.unsplash.com/photo-1598928506397-5f8041b1a24b?ixlib=rb-4.0.3',
                 'https://images.unsplash.com/photo-1598928506381-2b1a0c2632f9?ixlib=rb-4.0.3',
                 'https://images.unsplash.com/photo-1598928506388-9bc5b3c5f3b1?ixlib=rb-4.0.3'
@@ -48,6 +56,7 @@ export default function Flats() {
             size: '70m²',
             amenities: ['Ar condicionado', 'TV LED 50"', 'Wi-Fi', 'Frigobar', 'Cama king size', 'Hidromassagem', 'Varanda com rede', 'Cozinha americana', 'Sala de estar', '2 banheiros'],
             images: [
+                varanda1,
                 'https://images.unsplash.com/photo-1611892440504-42a792e24d32?ixlib=rb-4.0.3',
                 'https://images.unsplash.com/photo-1611892440907-1c9e5b3c3b0a?ixlib=rb-4.0.3',
                 'https://images.unsplash.com/photo-1611892440907-1c9e5b3c3b0b?ixlib=rb-4.0.3'
@@ -63,6 +72,7 @@ export default function Flats() {
             size: '85m²',
             amenities: ['2 quartos', 'Ar condicionado', '2 TVs LED', 'Wi-Fi', 'Frigobar', 'Cozinha completa', 'Sala de estar', 'Varanda', '2 banheiros'],
             images: [
+                varanda2,
                 'https://images.unsplash.com/photo-1560185007-5f0f9a5b1c3a?ixlib=rb-4.0.3',
                 'https://images.unsplash.com/photo-1560185007-5f0f9a5b1c3b?ixlib=rb-4.0.3',
                 'https://images.unsplash.com/photo-1560185007-5f0f9a5b1c3c?ixlib=rb-4.0.3'

@@ -4,6 +4,8 @@ import LandingHeader from '../components/Header';
 import Footer from '../components/Footer';
 import { useTheme } from '../../context/ThemeContext';
 
+import about from '../assets/images/resort_001.jpeg';
+
 export default function About() {
     const { theme } = useTheme();
 
@@ -96,7 +98,8 @@ export default function About() {
             <section className="relative h-[50vh] flex items-center justify-center overflow-hidden">
                 <div className="absolute inset-0">
                     <img 
-                        src="https://images.unsplash.com/photo-1582719508461-905c673771fd?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1925&q=80"
+//                        src="https://images.unsplash.com/photo-1582719508461-905c673771fd?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1925&q=80"
+                        src={about}
                         alt="Sobre o Resort"
                         className="w-full h-full object-cover"
                     />
