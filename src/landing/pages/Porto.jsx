@@ -4,6 +4,9 @@ import LandingHeader from '../components/Header';
 import Footer from '../components/Footer';
 import { useTheme } from '../../context/ThemeContext';
 
+import muroalto1 from '../assets/images/porto_muroalto_001.webp';
+import pontal1 from '../assets/images/porto_pontalmaracaipe_003.jpg';
+
 export default function Porto() {
     const { theme } = useTheme();
 
@@ -48,14 +51,14 @@ export default function Porto() {
         {
             name: 'Praia de Muro Alto',
             description: 'Considerada uma das praias mais bonitas do Brasil, com suas piscinas naturais formadas por recifes e águas calmas e cristalinas. Perfeita para famílias.',
-            image: 'https://images.unsplash.com/photo-1590523277543-a94d2e4eb00b?ixlib=rb-4.0.3',
+            image: muroalto1,
             icon: '🏖️',
             highlights: ['Águas calmas', 'Estrutura de quiosques', 'Esportes náuticos']
         },
         {
             name: 'Pontal de Maracaípe',
             description: 'Ponto de encontro do rio com o mar, famoso pelo pôr do sol espetacular e pelas ondas perfeitas para a prática de surfe.',
-            image: 'https://images.unsplash.com/photo-1507525425510-1fad3f8a9f5b?ixlib=rb-4.0.3',
+            image: pontal1,
             icon: '🌅',
             highlights: ['Pôr do sol', 'Surfe', 'Barracas na praia']
         },
