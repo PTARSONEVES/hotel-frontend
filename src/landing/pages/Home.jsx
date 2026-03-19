@@ -4,6 +4,8 @@ import LandingHeader from '../components/Header';
 import Footer from '../components/Footer';
 import { useTheme } from '../../context/ThemeContext';
 
+import home from '../assets/images/home_001.jpeg';
+
 export default function Home() {
     const { theme } = useTheme();
 
@@ -66,7 +68,8 @@ export default function Home() {
                 {/* Background Image */}
                 <div className="absolute inset-0">
                     <img 
-                        src="https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
+//                        src="https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
+                        src={home}
                         alt="Resort"
                         className="w-full h-full object-cover"
                     />
