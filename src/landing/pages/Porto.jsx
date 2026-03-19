@@ -6,6 +6,9 @@ import { useTheme } from '../../context/ThemeContext';
 
 import muroalto1 from '../assets/images/porto_muroalto_001.webp';
 import pontal1 from '../assets/images/porto_pontalmaracaipe_003.jpg';
+import porto from '../assets/images/porto_vila_001.jpg';
+import piscina from '../assets/images/porto_piscinasnaturais_001.jpg';
+
 
 export default function Porto() {
     const { theme } = useTheme();
@@ -44,7 +47,7 @@ export default function Porto() {
         {
             name: 'Piscinas Naturais',
             description: 'O cartão-postal de Porto de Galinhas. Piscinas naturais de águas cristalinas formadas entre corais, onde você pode nadar com peixes coloridos e relaxar em águas mornas.',
-            image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?ixlib=rb-4.0.3',
+            image: piscina,
             icon: '🐠',
             highlights: ['Maré baixa (melhor horário)', 'Passeio de jangada', 'Snorkeling']
         },
@@ -133,7 +136,7 @@ export default function Porto() {
             <section className="relative h-screen flex items-center justify-center overflow-hidden">
                 <div className="absolute inset-0">
                     <img 
-                        src="https://images.unsplash.com/photo-1544551763-46a013bb70d5?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
+                        src={porto}
                         alt="Porto de Galinhas"
                         className="w-full h-full object-cover"
                     />
