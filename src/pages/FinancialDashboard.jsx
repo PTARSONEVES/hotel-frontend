@@ -18,6 +18,7 @@ export default function FinancialDashboard() {
         description: '',
         amount: '',
         due_date: new Date().toISOString().split('T')[0],
+        payment_date: '',
         category_id: '',
         supplier: '',
         notes: ''
@@ -30,6 +31,7 @@ export default function FinancialDashboard() {
         title: '',
         amount: '',
         due_date: new Date().toISOString().split('T')[0],
+        payment_date: '',
         status: 'pendente',
         notes: ''
     });
@@ -74,7 +76,11 @@ export default function FinancialDashboard() {
     const handleCreateBill = async (e) => {
         e.preventDefault();
         try {
-            await api.post('/financial/bills', billFormData);
+            const createData = { ...billFormData };
+            if (createData.payment_date) {
+                createData.status = 'pago';
+            }
+            await api.post('/financial/bills', createData);
             setShowBillForm(false);
             resetBillForm();
             loadData();
@@ -89,6 +95,7 @@ export default function FinancialDashboard() {
             description: bill.description,
             amount: bill.amount,
             due_date: bill.due_date.split('T')[0],
+            payment_date: bill.payment_date ? bill.payment_date.split('T')[0] : '',
             category_id: bill.category_id || '',
             supplier: bill.supplier || '',
             notes: bill.notes || ''
@@ -99,7 +106,11 @@ export default function FinancialDashboard() {
     const handleUpdateBill = async (e) => {
         e.preventDefault();
         try {
-            await api.put(`/financial/bills/${editingBill.id}`, billFormData);
+            const updateData = { ...billFormData };
+            if (updateData.payment_date) {
+                updateData.status = 'pago';
+            }
+            await api.put(`/financial/bills/${editingBill.id}`, updateData);
             setShowBillForm(false);
             setEditingBill(null);
             resetBillForm();
@@ -137,6 +148,7 @@ export default function FinancialDashboard() {
             description: '',
             amount: '',
             due_date: new Date().toISOString().split('T')[0],
+            payment_date: '',
             category_id: '',
             supplier: '',
             notes: ''
@@ -153,6 +165,7 @@ export default function FinancialDashboard() {
             title: receivable.title || 'Reserva',
             amount: receivable.amount,
             due_date: receivable.due_date.split('T')[0],
+            payment_date: receivable.payment_date ? receivable.payment_date.split('T')[0] : '',
             status: receivable.status,
             notes: receivable.notes || ''
         });
@@ -162,7 +175,11 @@ export default function FinancialDashboard() {
     const handleUpdateReceivable = async (e) => {
         e.preventDefault();
         try {
-            await api.put(`/financial/receivables/${editingReceivable.id}`, receivableFormData);
+            const updateData = { ...receivableFormData };
+            if (updateData.payment_date) {
+                updateData.status = 'pago';
+            }
+            await api.put(`/financial/receivables/${editingReceivable.id}`, updateData);
             setShowReceivableForm(false);
             setEditingReceivable(null);
             resetReceivableForm();
@@ -188,6 +205,7 @@ export default function FinancialDashboard() {
             title: '',
             amount: '',
             due_date: new Date().toISOString().split('T')[0],
+            payment_date: '',
             status: 'pendente',
             notes: ''
         });
@@ -528,7 +546,7 @@ export default function FinancialDashboard() {
                 </div>
             </div>
 
-            {/* Modal Contas a Pagar */}
+            {/* Modal Contas a Pagar (Criação e Edição) */}
             {showBillForm && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className={`${classes.card} rounded-lg p-6 w-96`}>
@@ -587,6 +605,25 @@ export default function FinancialDashboard() {
                                     onChange={(e) => setBillFormData({...billFormData, due_date: e.target.value})}
                                     required
                                 />
+                            </div>
+
+                            <div>
+                                <label className={`block text-sm font-medium mb-1 ${classes.text}`}>
+                                    Data de Pagamento {editingBill?.status === 'pago' ? '(já pago)' : '(opcional)'}
+                                </label>
+                                <input
+                                    type="date"
+                                    className={`w-full p-2 border rounded 
+                                        ${theme === 'dracula' ? 'bg-[#44475a] border-[#6272a4] text-[#f8f8f2]' : 
+                                          theme === 'dark' ? 'bg-gray-700 border-gray-600 text-white' : 
+                                          'bg-white border-gray-300 text-gray-900'}
+                                        focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                                    value={billFormData.payment_date}
+                                    onChange={(e) => setBillFormData({...billFormData, payment_date: e.target.value})}
+                                />
+                                <p className={`text-xs mt-1 ${classes.text} opacity-70`}>
+                                    Se a conta já foi paga, informe a data do pagamento
+                                </p>
                             </div>
 
                             <div>
@@ -671,14 +708,14 @@ export default function FinancialDashboard() {
                 </div>
             )}
 
-            {/* Modal Contas a Receber */}
+            {/* Modal Contas a Receber (Edição) */}
             {showReceivableForm && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className={`${classes.card} rounded-lg p-6 w-96`}>
                         <h3 className={`text-xl font-bold mb-4 ${classes.text}`}>
-                            {editingReceivable ? 'Editar' : 'Nova'} Conta a Receber
+                            Editar Conta a Receber
                         </h3>
-                        <form onSubmit={editingReceivable ? handleUpdateReceivable : (e) => e.preventDefault()} className="space-y-4">
+                        <form onSubmit={handleUpdateReceivable} className="space-y-4">
                             <div>
                                 <label className={`block text-sm font-medium mb-1 ${classes.text}`}>
                                     Descrição *
@@ -734,6 +771,25 @@ export default function FinancialDashboard() {
 
                             <div>
                                 <label className={`block text-sm font-medium mb-1 ${classes.text}`}>
+                                    Data de Pagamento {editingReceivable?.status === 'pago' ? '(já recebido)' : '(opcional)'}
+                                </label>
+                                <input
+                                    type="date"
+                                    className={`w-full p-2 border rounded 
+                                        ${theme === 'dracula' ? 'bg-[#44475a] border-[#6272a4] text-[#f8f8f2]' : 
+                                          theme === 'dark' ? 'bg-gray-700 border-gray-600 text-white' : 
+                                          'bg-white border-gray-300 text-gray-900'}
+                                        focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                                    value={receivableFormData.payment_date}
+                                    onChange={(e) => setReceivableFormData({...receivableFormData, payment_date: e.target.value})}
+                                />
+                                <p className={`text-xs mt-1 ${classes.text} opacity-70`}>
+                                    Se já foi recebido, informe a data do recebimento
+                                </p>
+                            </div>
+
+                            <div>
+                                <label className={`block text-sm font-medium mb-1 ${classes.text}`}>
                                     Status
                                 </label>
                                 <select
@@ -775,7 +831,7 @@ export default function FinancialDashboard() {
                                             ? 'bg-[#bd93f9] hover:bg-[#ff79c6] text-white' 
                                             : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
                                 >
-                                    {editingReceivable ? 'Atualizar' : 'Salvar'}
+                                    Atualizar
                                 </button>
                                 <button
                                     type="button"
