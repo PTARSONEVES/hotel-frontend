@@ -4,7 +4,7 @@ import LandingHeader from '../components/Header';
 import Footer from '../components/Footer';
 import { useTheme } from '../../context/ThemeContext';
 
-import home from '../assets/images/home_001.jpeg';
+import home from '../assets/images/home_004.jpeg';
 
 export default function Home() {
     const { theme } = useTheme();
