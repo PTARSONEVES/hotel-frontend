@@ -68,12 +68,11 @@ export default function Home() {
                 {/* Background Image */}
                 <div className="absolute inset-0">
                     <img 
-//                        src="https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
                         src={home}
-                        alt="Resort"
-                        className="w-full h-full object-cover"
+                        alt="Ancorar Flat Resort"
+                        className="w-full h-full object-cover brightness-110"
                     />
-                    <div className="absolute inset-0 bg-black/50"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/25 to-transparent"></div>
                 </div>
 
                 {/* Hero Content */}
