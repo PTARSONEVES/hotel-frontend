@@ -9,7 +9,6 @@ export default function Dashboard() {
     return (
         <div className="min-h-screen bg-gray-100 dark:bg-gray-900 pt-20">
             <ThemeToggle />
-            
             <div className="max-w-7xl mx-auto px-4">
                 <RoleBasedDashboard />
             </div>
