@@ -5,7 +5,7 @@ import { AuthProvider } from './context/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
 import NavbarSistema from './components/NavbarSistema';
 
-// Landing Pages
+// Landing Pages   
 import Home from './landing/pages/Home';
 import About from './landing/pages/About';
 import Flats from './landing/pages/Flats';
