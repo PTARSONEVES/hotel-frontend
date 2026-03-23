@@ -1,6 +1,17 @@
 import axios from 'axios';
 
-const baseURL = 'http://localhost:3000/api';
+// Forçar a URL correta para produção
+const getBaseURL = () => {
+    // Se estiver rodando localmente (localhost), usa localhost
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return 'http://localhost:3000/api';
+    }
+    // Se estiver em produção, usa a URL do backend no Render
+    return 'https://sistema-financeiro-d71y.onrender.com/api';
+};
+
+const baseURL = getBaseURL();
+
 console.log('🔧 API Base URL:', baseURL);
 
 const api = axios.create({
