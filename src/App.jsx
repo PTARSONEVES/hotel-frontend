@@ -13,6 +13,8 @@ import Porto from './landing/pages/Porto';
 import PreBooking from './landing/pages/PreBooking';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import CompleteRegistration from './pages/CompleteRegistration';
+import ConfirmEmail from './pages/ConfirmEmail';
 
 // Sistema
 import Dashboard from './pages/Dashboard';
@@ -67,6 +69,8 @@ function App() {
                         <Route path="/pre-reserva" element={<PreBooking />} />
                         <Route path="/login" element={<Login />} />
                         <Route path="/register" element={<Register />} />
+                        <Route path="/complete-registration" element={<CompleteRegistration />} />
+                        <Route path="/confirm-email" element={<ConfirmEmail />} />
 
                         {/* Sistema */}
                         <Route path="/dashboard" element={

@@ -166,13 +166,13 @@ export default function Navbar() {
                     <div className="flex items-center space-x-3">
                         <AlertBell />
                         <ThemeToggle />
-                        
+
                         {user ? (
                             <>
                                 <span className={`text-sm hidden md:block ${themeClasses.text}`}>
                                     Olá, <span className="font-semibold">{user.name || user.email}</span>
                                 </span>
-                                
+
                                 <button
                                     onClick={handleLogout}
                                     className={`inline-flex items-center px-3 py-2 text-sm font-medium 

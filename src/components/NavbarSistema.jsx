@@ -139,14 +139,16 @@ export default function NavbarSistema() {
             path: '/my-bookings',
             icon: '📋',
             show: user?.role === 'hospede'
-        },
+        }
+/*
         {
             label: 'Manutenção',
             path: '/maintenance',
             icon: '🔧',
             show: hasPermission('ver_manutencao')
         }
-    ].filter(item => item.show);
+*/
+        ].filter(item => item.show);
 
     // Menu do usuário
     const userMenuItems = [
