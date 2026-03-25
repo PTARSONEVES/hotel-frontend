@@ -50,7 +50,8 @@ export function AuthProvider({ children }) {
             console.error('❌ Erro no login:', error);
             return { 
                 success: false, 
-                error: error.response?.data?.error || 'Erro ao fazer login' 
+                error: error.response?.data?.error || 'Erro ao fazer login',
+                needsVerification: error.response?.data?.needsVerification || false
             };
         }
     };
