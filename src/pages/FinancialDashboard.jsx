@@ -13,6 +13,7 @@ export default function FinancialDashboard() {
 
     // Estados para contas a pagar
     const [showBillForm, setShowBillForm] = useState(false);
+    const [searchCode, setSearchCode] = useState('');
     const [editingBill, setEditingBill] = useState(null);
     const [billFormData, setBillFormData] = useState({
         description: '',
@@ -29,12 +30,28 @@ export default function FinancialDashboard() {
     const [editingReceivable, setEditingReceivable] = useState(null);
     const [receivableFormData, setReceivableFormData] = useState({
         title: '',
+        description: '',
         amount: '',
         due_date: new Date().toISOString().split('T')[0],
+        category_id: '',
         payment_date: '',
         status: 'pendente',
         notes: ''
     });
+
+    // Função para criar conta a receber
+    const handleCreateReceivable = async (e) => {
+        e.preventDefault();
+        try {
+            const response = await api.post('/financial/receivables', receivableFormData);
+            alert('Conta a receber criada com sucesso!');
+            setShowReceivableForm(false);
+            resetReceivableForm();
+            loadData();
+        } catch (error) {
+            alert(error.response?.data?.error || 'Erro ao criar conta');
+        }
+    };
 
     const { theme } = useTheme();
 
@@ -45,10 +62,26 @@ export default function FinancialDashboard() {
     const loadData = async () => {
         try {
             setLoading(true);
-            
-            const response = await api.get('/financial/dashboard', { params: period });
+
+            // Adicionar parâmetro de busca por código
+            const params = new URLSearchParams();
+            params.append('startDate', period.startDate);
+            params.append('endDate', period.endDate);
+            if (searchCode) params.append('code', searchCode);
+
+            const response = await api.get(`/financial/dashboard?${params}`);
             console.log('📊 Dados financeiros:', response.data);
-            
+
+            // Carregar categorias de receita
+            let revenueCategories = [];
+            try {
+                const categoriesRes = await api.get('/financial/revenue-categories');
+                revenueCategories = categoriesRes.data;
+            } catch (error) {
+                console.error('❌ Erro ao carregar categorias de receita:', error);
+            }
+
+            // Carregar categorias de despesas
             let expenseCategories = [];
             try {
                 const categoriesRes = await api.get('/financial/categories');
@@ -56,12 +89,13 @@ export default function FinancialDashboard() {
             } catch (error) {
                 console.error('❌ Erro ao carregar categorias:', error);
             }
-            
+
             setData({
                 ...response.data,
-                expenseCategories: expenseCategories
+                expenseCategories: expenseCategories,
+                revenueCategories: revenueCategories
             });
-            
+
         } catch (error) {
             console.error('❌ Erro ao carregar dados financeiros:', error);
         } finally {
@@ -276,7 +310,7 @@ export default function FinancialDashboard() {
     return (
         <div className="min-h-screen bg-gray-100 dark:bg-gray-900 pt-20 pb-8">
             <ThemeToggle />
-            
+
             <div className="max-w-7xl mx-auto px-4">
                 {/* Header */}
                 <div className="flex justify-between items-center mb-8">
@@ -285,6 +319,25 @@ export default function FinancialDashboard() {
                     </h1>
                     
                     <div className="flex items-center space-x-4">
+                        {/* NOVO: Campo de busca por código */}
+                        <div className="relative">
+                            <input
+                                type="text"
+                                placeholder="Buscar por código..."
+                                value={searchCode}
+                                onChange={(e) => setSearchCode(e.target.value)}
+                                className={`px-3 py-2 border rounded w-48 ${classes.border} ${classes.text} bg-white dark:bg-gray-700`}
+                            />
+                            {searchCode && (
+                                <button
+                                    onClick={() => setSearchCode('')}
+                                    className="absolute right-2 top-2 text-gray-400 hover:text-gray-600"
+                                >
+                                    ✕
+                                </button>
+                            )}
+                        </div>
+                        
                         <div className="flex space-x-2">
                             <input
                                 type="date"
@@ -393,12 +446,26 @@ export default function FinancialDashboard() {
 
                 {/* Contas a Receber */}
                 <div className={`${classes.card} p-6 rounded-lg shadow mb-8`}>
-                    <h2 className={`text-xl font-bold mb-4 ${classes.text}`}>Contas a Receber</h2>
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className={`text-xl font-bold ${classes.text}`}>Contas a Receber</h2>
+                        <button
+                            onClick={() => {
+                                setEditingReceivable(null);
+                                resetReceivableForm();
+                                setShowReceivableForm(true);
+                            }}
+                            className="text-sm px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+                        >
+                            + Nova
+                        </button>
+                    </div>
+                    
                     {data?.receivables && data.receivables.length > 0 ? (
                         <div className="overflow-x-auto">
                             <table className="min-w-full">
                                 <thead>
                                     <tr className="border-b">
+                                        <th className={`text-left py-2 ${classes.text}`}>Código</th>
                                         <th className={`text-left py-2 ${classes.text}`}>Descrição</th>
                                         <th className={`text-left py-2 ${classes.text}`}>Hóspede</th>
                                         <th className={`text-left py-2 ${classes.text}`}>Vencimento</th>
@@ -410,6 +477,25 @@ export default function FinancialDashboard() {
                                 <tbody>
                                     {data.receivables.map(item => (
                                         <tr key={item.id} className="border-b">
+                                            <td className="py-2">
+                                                <div className="flex items-center space-x-1">
+                                                    <code className={`text-xs font-mono ${classes.code || 'text-blue-600'}`}>
+                                                        {item.operation_code || '-'}
+                                                    </code>
+                                                    {item.operation_code && (
+                                                        <button
+                                                            onClick={() => {
+                                                                navigator.clipboard.writeText(item.operation_code);
+                                                                alert('Código copiado!');
+                                                            }}
+                                                            className="text-xs opacity-50 hover:opacity-100"
+                                                            title="Copiar"
+                                                        >
+                                                            📋
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </td>
                                             <td className={`py-2 ${classes.text}`}>{item.title || 'Reserva'}</td>
                                             <td className={`py-2 ${classes.text}`}>{item.guest_name || '-'}</td>
                                             <td className={`py-2 ${classes.text}`}>
@@ -478,6 +564,7 @@ export default function FinancialDashboard() {
                             <table className="min-w-full">
                                 <thead>
                                     <tr className="border-b">
+                                        <th className={`text-left py-2 ${classes.text}`}>Código</th>
                                         <th className={`text-left py-2 ${classes.text}`}>Descrição</th>
                                         <th className={`text-left py-2 ${classes.text}`}>Fornecedor</th>
                                         <th className={`text-left py-2 ${classes.text}`}>Vencimento</th>
@@ -489,6 +576,25 @@ export default function FinancialDashboard() {
                                 <tbody>
                                     {data.payables.map(bill => (
                                         <tr key={bill.id} className="border-b">
+                                            <td className="py-2">
+                                                <div className="flex items-center space-x-1">
+                                                    <code className={`text-xs font-mono ${classes.code || 'text-blue-600'}`}>
+                                                        {bill.operation_code || '-'}
+                                                    </code>
+                                                    {bill.operation_code && (
+                                                        <button
+                                                            onClick={() => {
+                                                                navigator.clipboard.writeText(bill.operation_code);
+                                                                alert('Código copiado!');
+                                                            }}
+                                                            className="text-xs opacity-50 hover:opacity-100"
+                                                            title="Copiar"
+                                                        >
+                                                            📋
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </td>
                                             <td className={`py-2 ${classes.text}`}>{bill.description}</td>
                                             <td className={`py-2 ${classes.text}`}>{bill.supplier || '-'}</td>
                                             <td className={`py-2 ${classes.text}`}>
@@ -544,6 +650,7 @@ export default function FinancialDashboard() {
                         </p>
                     )}
                 </div>
+
             </div>
 
             {/* Modal Contas a Pagar (Criação e Edição) */}
@@ -708,7 +815,7 @@ export default function FinancialDashboard() {
                 </div>
             )}
 
-            {/* Modal Contas a Receber (Edição) */}
+            {/* Modal Contas a Receber (Edição) 
             {showReceivableForm && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className={`${classes.card} rounded-lg p-6 w-96`}>
@@ -851,7 +958,140 @@ export default function FinancialDashboard() {
                         </form>
                     </div>
                 </div>
+            )}*}
+
+            {/* Modal de Criação/Edição de Conta a Receber */}
+            {showReceivableForm && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className={`${classes.card} rounded-lg p-6 w-96`}>
+                        <h3 className={`text-xl font-bold mb-4 ${classes.text}`}>
+                            {editingReceivable ? 'Editar' : 'Nova'} Conta a Receber
+                        </h3>
+                        <form onSubmit={editingReceivable ? handleUpdateReceivable : handleCreateReceivable} className="space-y-4">
+                            <div>
+                                <label className={`block text-sm font-medium mb-1 ${classes.text}`}>
+                                    Descrição *
+                                </label>
+                                <input
+                                    type="text"
+                                    className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500
+                                        ${theme === 'dracula' 
+                                            ? 'bg-[#282a36] border-[#6272a4] text-[#f8f8f2] placeholder-[#6272a4]' 
+                                            : theme === 'dark' 
+                                            ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                                            : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'}`}
+                                    value={receivableFormData.title}
+                                    onChange={(e) => setReceivableFormData({...receivableFormData, title: e.target.value})}
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label className={`block text-sm font-medium mb-1 ${classes.text}`}>
+                                    Valor (R$) *
+                                </label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500
+                                        ${theme === 'dracula' 
+                                            ? 'bg-[#282a36] border-[#6272a4] text-[#f8f8f2] placeholder-[#6272a4]' 
+                                            : theme === 'dark' 
+                                            ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                                            : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'}`}
+                                    value={receivableFormData.amount}
+                                    onChange={(e) => setReceivableFormData({...receivableFormData, amount: e.target.value})}
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label className={`block text-sm font-medium mb-1 ${classes.text}`}>
+                                    Data de Vencimento *
+                                </label>
+                                <input
+                                    type="date"
+                                    className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500
+                                        ${theme === 'dracula' 
+                                            ? 'bg-[#282a36] border-[#6272a4] text-[#f8f8f2] placeholder-[#6272a4]' 
+                                            : theme === 'dark' 
+                                            ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                                            : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'}`}
+                                    value={receivableFormData.due_date}
+                                    onChange={(e) => setReceivableFormData({...receivableFormData, due_date: e.target.value})}
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label className={`block text-sm font-medium mb-1 ${classes.text}`}>
+                                    Categoria
+                                </label>
+                                <select
+                                    className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500
+                                        ${theme === 'dracula' 
+                                            ? 'bg-[#282a36] border-[#6272a4] text-[#f8f8f2]' 
+                                            : theme === 'dark' 
+                                            ? 'bg-gray-700 border-gray-600 text-white' 
+                                            : 'bg-white border-gray-300 text-gray-900'}`}
+                                    value={receivableFormData.category_id}
+                                    onChange={(e) => setReceivableFormData({...receivableFormData, category_id: e.target.value})}
+                                >
+                                    <option value="">Selecione...</option>
+                                    {data?.revenueCategories?.map(cat => (
+                                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className={`block text-sm font-medium mb-1 ${classes.text}`}>
+                                    Observações
+                                </label>
+                                <textarea
+                                    rows="3"
+                                    className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500
+                                        ${theme === 'dracula' 
+                                            ? 'bg-[#282a36] border-[#6272a4] text-[#f8f8f2] placeholder-[#6272a4]' 
+                                            : theme === 'dark' 
+                                            ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                                            : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'}`}
+                                    value={receivableFormData.notes}
+                                    onChange={(e) => setReceivableFormData({...receivableFormData, notes: e.target.value})}
+                                />
+                            </div>
+
+                            <div className="flex space-x-3 pt-4">
+                                <button
+                                    type="submit"
+                                    className={`flex-1 py-2 rounded transition-colors
+                                        ${theme === 'dracula' 
+                                            ? 'bg-[#bd93f9] hover:bg-[#ff79c6] text-white' 
+                                            : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
+                                >
+                                    {editingReceivable ? 'Atualizar' : 'Salvar'}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowReceivableForm(false);
+                                        setEditingReceivable(null);
+                                        resetReceivableForm();
+                                    }}
+                                    className={`flex-1 py-2 rounded transition-colors
+                                        ${theme === 'dracula' 
+                                            ? 'bg-[#6272a4] hover:bg-[#44475a] text-[#f8f8f2]' 
+                                            : 'bg-gray-600 hover:bg-gray-700 text-white'}`}
+                                >
+                                    Cancelar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             )}
+
         </div>
     );
 }

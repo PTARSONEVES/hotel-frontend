@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
@@ -22,6 +22,7 @@ import HotelDashboard from './modules/hotel/pages/HotelDashboard';
 import RoomMap from './modules/hotel/pages/RoomMap';
 import RoomList from './modules/hotel/pages/RoomList';
 import BookingList from './modules/hotel/pages/BookingList';
+import BookingForm from './modules/hotel/pages/BookingForm';
 import GuestList from './modules/hotel/pages/GuestList';
 import Accounts from './pages/Accounts';
 import AccountForm from './pages/AccountForm';
@@ -103,6 +104,13 @@ function App() {
                                 </SistemaLayout>
                             </PrivateRoute>
                         } />
+                        <Route path="/hotel/bookings/new" element={
+                            <PrivateRoute requiredPermission="criar_reserva">
+                                <SistemaLayout>
+                                    <BookingForm onClose={() => window.location.href = '/hotel/bookings'} />
+                                </SistemaLayout>
+                            </PrivateRoute>
+                        } />
                         <Route path="/hotel/bookings" element={
                             <PrivateRoute requiredPermission="ver_todas_reservas">
                                 <SistemaLayout>
@@ -117,7 +125,6 @@ function App() {
                                 </SistemaLayout>
                             </PrivateRoute>
                         } />
-
                         {/* Módulo Financeiro */}
                         <Route path="/financial" element={
                             <PrivateRoute requiredPermission="ver_todas_contas">

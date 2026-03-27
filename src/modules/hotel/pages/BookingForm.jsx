@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../../../services/api';
 import { useTheme } from '../../../context/ThemeContext';
 import { useAuth } from '../../../context/AuthContext';
+import OperationCodeDisplay from '../../../components/OperationCodeDisplay';
 
 export default function BookingForm({ bookingId, onClose, onSuccess }) {
     const [guests, setGuests] = useState([]);
@@ -10,6 +11,8 @@ export default function BookingForm({ bookingId, onClose, onSuccess }) {
     const [availableRooms, setAvailableRooms] = useState([]);
     const [checkingAvailability, setCheckingAvailability] = useState(false);
     const [userInfo, setUserInfo] = useState(null);
+    const [showSuccess, setShowSuccess] = useState(false);
+    const [createdBookingCode, setCreatedBookingCode] = useState(null);
     const { user } = useAuth();
     const { theme } = useTheme();
 
@@ -30,6 +33,40 @@ export default function BookingForm({ bookingId, onClose, onSuccess }) {
         payment_method: 'pix',
         observations: ''
     });
+
+    const getThemeClasses = () => {
+        if (theme === 'dracula') {
+            return {
+                card: 'bg-[#44475a]',
+                text: 'text-[#f8f8f2]',
+                input: 'bg-[#282a36] border-[#6272a4] text-[#f8f8f2]',
+                button: 'bg-[#bd93f9] hover:bg-[#ff79c6] text-white',
+                cancelButton: 'bg-[#6272a4] hover:bg-[#44475a] text-white',
+                border: 'border-[#6272a4]'
+            };
+        }
+        if (theme === 'dark') {
+            return {
+                card: 'bg-gray-800',
+                text: 'text-white',
+                input: 'bg-gray-700 border-gray-600 text-white',
+                button: 'bg-blue-600 hover:bg-blue-700 text-white',
+                cancelButton: 'bg-gray-600 hover:bg-gray-700 text-white',
+                border: 'border-gray-700'
+            };
+        }
+        return {
+            card: 'bg-white',
+            text: 'text-gray-900',
+            input: 'bg-white border-gray-300 text-gray-900',
+            button: 'bg-blue-600 hover:bg-blue-700 text-white',
+            cancelButton: 'bg-gray-500 hover:bg-gray-600 text-white',
+            border: 'border-gray-200'
+        };
+    };
+
+    const classes = getThemeClasses();
+
 
     useEffect(() => {
         loadRooms();
@@ -142,11 +179,13 @@ export default function BookingForm({ bookingId, onClose, onSuccess }) {
         }
     };
 
+    const downPaymentAmount = (formData.total_amount * formData.down_payment_percentage) / 100;
+    const remainingAmount = formData.total_amount - downPaymentAmount;
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
 
-        // Validar dados do hóspede
         if (!formData.guest_name || !formData.guest_email) {
             alert('Por favor, preencha os dados do hóspede');
             setLoading(false);
@@ -154,7 +193,6 @@ export default function BookingForm({ bookingId, onClose, onSuccess }) {
         }
 
         try {
-            // Se não houver guest_id, criar hóspede primeiro
             let guestId = formData.guest_id;
             
             if (!guestId) {
@@ -166,7 +204,6 @@ export default function BookingForm({ bookingId, onClose, onSuccess }) {
                     user_id: user?.id || null
                 });
                 guestId = guestResponse.data.id;
-                formData.guest_id = guestId;
             }
 
             const bookingData = {
@@ -185,9 +222,12 @@ export default function BookingForm({ bookingId, onClose, onSuccess }) {
 
             const response = await api.post('/hotel/bookings', bookingData);
             
-            alert('Reserva criada com sucesso!');
+            // SALVAR CÓDIGO E MOSTRAR SUCESSO
+            setCreatedBookingCode(response.data.operationCode);
+            setShowSuccess(true);
+            
             if (onSuccess) onSuccess(response.data.id);
-            if (onClose) onClose();
+            
         } catch (error) {
             alert(error.response?.data?.error || 'Erro ao criar reserva');
         } finally {
@@ -195,41 +235,41 @@ export default function BookingForm({ bookingId, onClose, onSuccess }) {
         }
     };
 
-    const getThemeClasses = () => {
-        if (theme === 'dracula') {
-            return {
-                card: 'bg-[#44475a]',
-                text: 'text-[#f8f8f2]',
-                input: 'bg-[#282a36] border-[#6272a4] text-[#f8f8f2]',
-                button: 'bg-[#bd93f9] hover:bg-[#ff79c6] text-white',
-                cancelButton: 'bg-[#6272a4] hover:bg-[#44475a] text-white',
-                border: 'border-[#6272a4]'
-            };
-        }
-        if (theme === 'dark') {
-            return {
-                card: 'bg-gray-800',
-                text: 'text-white',
-                input: 'bg-gray-700 border-gray-600 text-white',
-                button: 'bg-blue-600 hover:bg-blue-700 text-white',
-                cancelButton: 'bg-gray-600 hover:bg-gray-700 text-white',
-                border: 'border-gray-700'
-            };
-        }
-        return {
-            card: 'bg-white',
-            text: 'text-gray-900',
-            input: 'bg-white border-gray-300 text-gray-900',
-            button: 'bg-blue-600 hover:bg-blue-700 text-white',
-            cancelButton: 'bg-gray-500 hover:bg-gray-600 text-white',
-            border: 'border-gray-200'
-        };
-    };
-
-    const classes = getThemeClasses();
-
-    const downPaymentAmount = (formData.total_amount * formData.down_payment_percentage) / 100;
-    const remainingAmount = formData.total_amount - downPaymentAmount;
+    // Se estiver em modo de sucesso, mostrar tela de confirmação
+    if (showSuccess && createdBookingCode) {
+        return (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className={`${classes.card} rounded-lg p-6 w-[500px] text-center`}>
+                    <div className="text-6xl mb-4">✅</div>
+                    <h2 className={`text-2xl font-bold mb-4 ${classes.text}`}>
+                        Reserva Criada com Sucesso!
+                    </h2>
+                    
+                    {/* AQUI É ONDE O COMPONENTE DE CÓDIGO É EXIBIDO */}
+                    <OperationCodeDisplay 
+                        code={createdBookingCode} 
+                        label="Código da Reserva"
+                        showCopy={true}
+                    />
+                    
+                    <p className={`mt-4 mb-6 ${classes.text} opacity-70`}>
+                        Guarde este código para consultas futuras.
+                        Você também pode escaneá-lo como código de barras.
+                    </p>
+                    
+                    <button
+                        onClick={() => {
+                            if (onClose) onClose();
+                            else window.location.reload();
+                        }}
+                        className={`px-6 py-2 rounded ${classes.button}`}
+                    >
+                        Fechar
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -399,7 +439,12 @@ export default function BookingForm({ bookingId, onClose, onSuccess }) {
                                 <input
                                     type="number"
                                     step="0.01"
-                                    className={`w-full p-2 border rounded bg-gray-100 ${classes.text}`}
+                                    className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500
+                                        ${theme === 'dracula' 
+                                            ? 'bg-[#282a36] border-[#6272a4] text-[#f8f8f2]' 
+                                            : theme === 'dark' 
+                                            ? 'bg-gray-700 border-gray-600 text-white' 
+                                            : 'bg-gray-100 border-gray-300 text-gray-900'}`}
                                     value={formData.total_amount}
                                     readOnly
                                 />
@@ -409,7 +454,12 @@ export default function BookingForm({ bookingId, onClose, onSuccess }) {
                                     % de Entrada
                                 </label>
                                 <select
-                                    className={`w-full p-2 border rounded ${classes.input}`}
+                                    className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500
+                                        ${theme === 'dracula' 
+                                            ? 'bg-[#282a36] border-[#6272a4] text-[#f8f8f2]' 
+                                            : theme === 'dark' 
+                                            ? 'bg-gray-700 border-gray-600 text-white' 
+                                            : 'bg-white border-gray-300 text-gray-900'}`}
                                     value={formData.down_payment_percentage}
                                     onChange={(e) => setFormData({...formData, down_payment_percentage: parseFloat(e.target.value)})}
                                 >
@@ -452,7 +502,12 @@ export default function BookingForm({ bookingId, onClose, onSuccess }) {
                                     Forma de Pagamento
                                 </label>
                                 <select
-                                    className={`w-full p-2 border rounded ${classes.input}`}
+                                    className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500
+                                        ${theme === 'dracula' 
+                                            ? 'bg-[#282a36] border-[#6272a4] text-[#f8f8f2]' 
+                                            : theme === 'dark' 
+                                            ? 'bg-gray-700 border-gray-600 text-white' 
+                                            : 'bg-white border-gray-300 text-gray-900'}`}
                                     value={formData.payment_method}
                                     onChange={(e) => setFormData({...formData, payment_method: e.target.value})}
                                 >

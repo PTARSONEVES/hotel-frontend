@@ -1,42 +1,39 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import api from '../../../services/api';
-import { useTheme } from '../../../context/ThemeContext';
-import ThemeToggle from '../../../components/ThemeToggle';
+import api from '../services/api';
+import { useTheme } from '../context/ThemeContext';
+import ThemeToggle from '../components/ThemeToggle';
 
-export default function GuestList() {
-    const [guests, setGuests] = useState([]);
+export default function BillsList() {
+    const [bills, setBills] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchCode, setSearchCode] = useState('');
+    const [showForm, setShowForm] = useState(false);
     const [showDetails, setShowDetails] = useState(null);
-    const [showForm, setShowForm] = useState(false);  // <-- NOVO
-    const [formData, setFormData] = useState({       // <-- NOVO
-        name: '',
-        document: '',
-        email: '',
-        phone: '',
-        address: '',
-        city: '',
-        state: '',
-        country: 'Brasil'
+    const [formData, setFormData] = useState({
+        description: '',
+        amount: '',
+        due_date: new Date().toISOString().split('T')[0],
+        category_id: '',
+        supplier: '',
+        notes: ''
     });
     const [formLoading, setFormLoading] = useState(false);
     const { theme } = useTheme();
 
     useEffect(() => {
-        loadGuests();
+        loadBills();
     }, [searchCode]);
 
-    const loadGuests = async () => {
+    const loadBills = async () => {
         try {
             setLoading(true);
             const params = new URLSearchParams();
             if (searchCode) params.append('code', searchCode);
             
-            const response = await api.get(`/hotel/guests?${params}`);
-            setGuests(response.data);
+            const response = await api.get(`/financial/bills?${params}`);
+            setBills(response.data);
         } catch (error) {
-            console.error('Erro ao carregar hóspedes:', error);
+            console.error('Erro ao carregar contas:', error);
         } finally {
             setLoading(false);
         }
@@ -56,13 +53,13 @@ export default function GuestList() {
         setFormLoading(true);
         
         try {
-            await api.post('/hotel/guests', formData);
-            alert('Hóspede cadastrado com sucesso!');
+            const response = await api.post('/financial/bills', formData);
+            alert('Conta a pagar criada com sucesso!');
             setShowForm(false);
             resetForm();
-            loadGuests();
+            loadBills();
         } catch (error) {
-            alert(error.response?.data?.error || 'Erro ao cadastrar hóspede');
+            alert(error.response?.data?.error || 'Erro ao criar conta');
         } finally {
             setFormLoading(false);
         }
@@ -70,15 +67,29 @@ export default function GuestList() {
 
     const resetForm = () => {
         setFormData({
-            name: '',
-            document: '',
-            email: '',
-            phone: '',
-            address: '',
-            city: '',
-            state: '',
-            country: 'Brasil'
+            description: '',
+            amount: '',
+            due_date: new Date().toISOString().split('T')[0],
+            category_id: '',
+            supplier: '',
+            notes: ''
         });
+    };
+
+    const formatCurrency = (value) => {
+        return new Intl.NumberFormat('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+        }).format(value || 0);
+    };
+
+    const getStatusBadge = (status) => {
+        const styles = {
+            pendente: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+            pago: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+            atrasado: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+        };
+        return styles[status] || 'bg-gray-100 text-gray-800';
     };
 
     const getThemeClasses = () => {
@@ -133,13 +144,13 @@ export default function GuestList() {
             <div className="max-w-7xl mx-auto px-4">
                 <div className="flex justify-between items-center mb-8">
                     <h1 className={`text-3xl font-bold ${classes.text}`}>
-                        Hóspedes
+                        Contas a Pagar
                     </h1>
                     <button
                         onClick={() => setShowForm(true)}
                         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                     >
-                        + Novo Hóspede
+                        + Nova Conta
                     </button>
                 </div>
 
@@ -166,7 +177,7 @@ export default function GuestList() {
                     </div>
                 </div>
 
-                {/* Lista de Hóspedes */}
+                {/* Lista de Contas */}
                 <div className={`${classes.card} rounded-lg shadow overflow-hidden`}>
                     <div className="overflow-x-auto">
                         <table className="min-w-full">
@@ -176,35 +187,38 @@ export default function GuestList() {
                                         Código
                                     </th>
                                     <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${classes.text}`}>
-                                        Nome
+                                        Descrição
                                     </th>
                                     <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${classes.text}`}>
-                                        Documento
+                                        Fornecedor
                                     </th>
                                     <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${classes.text}`}>
-                                        Contato
+                                        Vencimento
+                                    </th>
+                                    <th className={`px-6 py-3 text-right text-xs font-medium uppercase tracking-wider ${classes.text}`}>
+                                        Valor
                                     </th>
                                     <th className={`px-6 py-3 text-center text-xs font-medium uppercase tracking-wider ${classes.text}`}>
-                                        Reservas
+                                        Status
                                     </th>
                                     <th className={`px-6 py-3 text-center text-xs font-medium uppercase tracking-wider ${classes.text}`}>
                                         Ações
                                     </th>
-                                  </tr>
+                                 </tr>
                             </thead>
                             <tbody className="divide-y">
-                                {guests.map(guest => (
-                                    <tr key={guest.id} className={`${classes.text} hover:bg-gray-50 dark:hover:bg-gray-700`}>
+                                {bills.map(bill => (
+                                    <tr key={bill.id} className={`${classes.text} hover:bg-gray-50 dark:hover:bg-gray-700`}>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center space-x-2">
                                                 <code className={`${classes.code} cursor-pointer`}
-                                                      onClick={() => copyToClipboard(guest.operation_code)}
+                                                      onClick={() => copyToClipboard(bill.operation_code)}
                                                       title="Clique para copiar">
-                                                    {guest.operation_code || '-'}
+                                                    {bill.operation_code || '-'}
                                                 </code>
-                                                {guest.operation_code && (
+                                                {bill.operation_code && (
                                                     <button
-                                                        onClick={() => copyToClipboard(guest.operation_code)}
+                                                        onClick={() => copyToClipboard(bill.operation_code)}
                                                         className="text-xs opacity-50 hover:opacity-100"
                                                         title="Copiar código"
                                                     >
@@ -213,39 +227,37 @@ export default function GuestList() {
                                                 )}
                                             </div>
                                          </td>
-                                        <td className="px-6 py-4 whitespace-nowrap font-medium">
-                                            {guest.name}
-                                        </td>
+                                        <td className="px-6 py-4">{bill.description}</td>
+                                        <td className="px-6 py-4">{bill.supplier || '-'}</td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            {guest.document}
+                                            {new Date(bill.due_date).toLocaleDateString()}
                                         </td>
-                                        <td className="px-6 py-4">
-                                            <div>{guest.email}</div>
-                                            <div className="text-sm opacity-70">{guest.phone}</div>
+                                        <td className="px-6 py-4 text-right font-medium">
+                                            {formatCurrency(bill.amount)}
                                         </td>
                                         <td className="px-6 py-4 text-center">
-                                            <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                                                {guest.total_bookings || 0} reservas
+                                            <span className={`px-2 py-1 text-xs rounded-full ${getStatusBadge(bill.status)}`}>
+                                                {bill.status}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             <button
-                                                onClick={() => setShowDetails(guest)}
+                                                onClick={() => setShowDetails(bill)}
                                                 className="text-blue-600 hover:text-blue-800"
                                                 title="Detalhes"
                                             >
                                                 👁️
                                             </button>
                                         </td>
-                                    </tr>
+                                     </tr>
                                 ))}
                             </tbody>
                         </table>
                     </div>
 
-                    {guests.length === 0 && (
+                    {bills.length === 0 && (
                         <div className="p-8 text-center">
-                            <p className={classes.text}>Nenhum hóspede encontrado</p>
+                            <p className={classes.text}>Nenhuma conta a pagar encontrada</p>
                         </div>
                     )}
                 </div>
@@ -254,108 +266,73 @@ export default function GuestList() {
             {/* Modal de Cadastro */}
             {showForm && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className={`${classes.card} rounded-lg p-6 w-[500px] max-h-[90vh] overflow-y-auto`}>
+                    <div className={`${classes.card} rounded-lg p-6 w-96`}>
                         <h3 className={`text-xl font-bold mb-4 ${classes.text}`}>
-                            Novo Hóspede
+                            Nova Conta a Pagar
                         </h3>
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
                                 <label className={`block text-sm font-medium mb-1 ${classes.text}`}>
-                                    Nome *
+                                    Descrição *
                                 </label>
                                 <input
                                     type="text"
                                     className={`w-full p-2 border rounded ${classes.input}`}
-                                    value={formData.name}
-                                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                                    value={formData.description}
+                                    onChange={(e) => setFormData({...formData, description: e.target.value})}
                                     required
                                 />
                             </div>
 
                             <div>
                                 <label className={`block text-sm font-medium mb-1 ${classes.text}`}>
-                                    CPF / Documento *
+                                    Valor (R$) *
                                 </label>
                                 <input
-                                    type="text"
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
                                     className={`w-full p-2 border rounded ${classes.input}`}
-                                    value={formData.document}
-                                    onChange={(e) => setFormData({...formData, document: e.target.value})}
+                                    value={formData.amount}
+                                    onChange={(e) => setFormData({...formData, amount: e.target.value})}
                                     required
                                 />
                             </div>
 
                             <div>
                                 <label className={`block text-sm font-medium mb-1 ${classes.text}`}>
-                                    Email
+                                    Data de Vencimento *
                                 </label>
                                 <input
-                                    type="email"
+                                    type="date"
                                     className={`w-full p-2 border rounded ${classes.input}`}
-                                    value={formData.email}
-                                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                    value={formData.due_date}
+                                    onChange={(e) => setFormData({...formData, due_date: e.target.value})}
+                                    required
                                 />
                             </div>
 
                             <div>
                                 <label className={`block text-sm font-medium mb-1 ${classes.text}`}>
-                                    Telefone
-                                </label>
-                                <input
-                                    type="tel"
-                                    className={`w-full p-2 border rounded ${classes.input}`}
-                                    value={formData.phone}
-                                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                                />
-                            </div>
-
-                            <div>
-                                <label className={`block text-sm font-medium mb-1 ${classes.text}`}>
-                                    Endereço
+                                    Fornecedor
                                 </label>
                                 <input
                                     type="text"
                                     className={`w-full p-2 border rounded ${classes.input}`}
-                                    value={formData.address}
-                                    onChange={(e) => setFormData({...formData, address: e.target.value})}
+                                    value={formData.supplier}
+                                    onChange={(e) => setFormData({...formData, supplier: e.target.value})}
                                 />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className={`block text-sm font-medium mb-1 ${classes.text}`}>
-                                        Cidade
-                                    </label>
-                                    <input
-                                        type="text"
-                                        className={`w-full p-2 border rounded ${classes.input}`}
-                                        value={formData.city}
-                                        onChange={(e) => setFormData({...formData, city: e.target.value})}
-                                    />
-                                </div>
-                                <div>
-                                    <label className={`block text-sm font-medium mb-1 ${classes.text}`}>
-                                        UF
-                                    </label>
-                                    <input
-                                        type="text"
-                                        maxLength="2"
-                                        className={`w-full p-2 border rounded ${classes.input}`}
-                                        value={formData.state}
-                                        onChange={(e) => setFormData({...formData, state: e.target.value.toUpperCase()})}
-                                    />
-                                </div>
                             </div>
 
                             <div>
                                 <label className={`block text-sm font-medium mb-1 ${classes.text}`}>
-                                    País
+                                    Observações
                                 </label>
-                                <input
-                                    type="text"
+                                <textarea
+                                    rows="3"
                                     className={`w-full p-2 border rounded ${classes.input}`}
-                                    value={formData.country}
-                                    onChange={(e) => setFormData({...formData, country: e.target.value})}
+                                    value={formData.notes}
+                                    onChange={(e) => setFormData({...formData, notes: e.target.value})}
                                 />
                             </div>
 
@@ -386,12 +363,12 @@ export default function GuestList() {
             {/* Modal de Detalhes */}
             {showDetails && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className={`${classes.card} rounded-lg p-6 w-[500px] max-h-[90vh] overflow-y-auto`}>
-                        <h3 className={`text-xl font-bold mb-4 ${classes.text}`}>Detalhes do Hóspede</h3>
+                    <div className={`${classes.card} rounded-lg p-6 w-96`}>
+                        <h3 className={`text-xl font-bold mb-4 ${classes.text}`}>Detalhes da Conta</h3>
                         
                         {showDetails.operation_code && (
                             <div className={`mb-4 p-3 rounded-lg bg-gray-100 dark:bg-gray-700`}>
-                                <p className={`text-xs ${classes.text} opacity-70`}>Código do Hóspede</p>
+                                <p className={`text-xs ${classes.text} opacity-70`}>Código da Conta</p>
                                 <div className="flex items-center justify-between">
                                     <code className={`text-lg font-bold font-mono ${classes.code}`}>
                                         {showDetails.operation_code}
@@ -411,30 +388,41 @@ export default function GuestList() {
                         
                         <div className="space-y-3">
                             <div className="grid grid-cols-2 gap-2">
-                                <span className="font-semibold">Nome:</span>
-                                <span>{showDetails.name}</span>
+                                <span className="font-semibold">Descrição:</span>
+                                <span>{showDetails.description}</span>
                                 
-                                <span className="font-semibold">Documento:</span>
-                                <span>{showDetails.document}</span>
+                                <span className="font-semibold">Valor:</span>
+                                <span className="font-bold">{formatCurrency(showDetails.amount)}</span>
                                 
-                                <span className="font-semibold">Email:</span>
-                                <span>{showDetails.email}</span>
+                                <span className="font-semibold">Vencimento:</span>
+                                <span>{new Date(showDetails.due_date).toLocaleDateString()}</span>
                                 
-                                <span className="font-semibold">Telefone:</span>
-                                <span>{showDetails.phone}</span>
+                                <span className="font-semibold">Fornecedor:</span>
+                                <span>{showDetails.supplier || 'N/A'}</span>
                                 
-                                <span className="font-semibold">Endereço:</span>
-                                <span>{showDetails.address || 'N/A'}</span>
+                                <span className="font-semibold">Status:</span>
+                                <span>
+                                    <span className={`px-2 py-1 text-xs rounded-full ${getStatusBadge(showDetails.status)}`}>
+                                        {showDetails.status}
+                                    </span>
+                                </span>
                                 
-                                <span className="font-semibold">Cidade/UF:</span>
-                                <span>{showDetails.city ? `${showDetails.city}/${showDetails.state}` : 'N/A'}</span>
-                                
-                                <span className="font-semibold">Cadastro:</span>
-                                <span>{new Date(showDetails.created_at).toLocaleDateString()}</span>
-                                
-                                <span className="font-semibold">Reservas:</span>
-                                <span>{showDetails.total_bookings || 0}</span>
+                                {showDetails.payment_date && (
+                                    <>
+                                        <span className="font-semibold">Data Pagamento:</span>
+                                        <span>{new Date(showDetails.payment_date).toLocaleDateString()}</span>
+                                    </>
+                                )}
                             </div>
+                            
+                            {showDetails.notes && (
+                                <div>
+                                    <span className="font-semibold">Observações:</span>
+                                    <p className="mt-1 p-2 bg-gray-100 dark:bg-gray-700 rounded">
+                                        {showDetails.notes}
+                                    </p>
+                                </div>
+                            )}
                         </div>
                         
                         <button
