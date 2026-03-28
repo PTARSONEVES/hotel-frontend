@@ -245,6 +245,18 @@ export default function FinancialDashboard() {
         });
     };
 
+    const handleReceiveReceivable = async (receivableId) => {
+        const paymentDate = prompt('Data de recebimento (AAAA-MM-DD):', new Date().toISOString().split('T')[0]);
+        if (!paymentDate) return;
+        
+        try {
+            await api.put(`/financial/receivables/${receivableId}/receive`, { payment_date: paymentDate });
+            loadData(); // Recarregar os dados
+        } catch (error) {
+            alert('Erro ao registrar recebimento');
+        }
+    };
+
     // =====================================================
     // TEMAS
     // =====================================================
@@ -515,6 +527,16 @@ export default function FinancialDashboard() {
                                             </td>
                                             <td className="py-2 text-right">
                                                 <div className="flex justify-end space-x-2">
+                                                    {/* NOVO BOTÃO RECEBER - aparece apenas se estiver pendente */}
+                                                    {item.status === 'pendente' && (
+                                                        <button
+                                                            onClick={() => handleReceiveReceivable(item.id)}
+                                                            className="text-xs px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+                                                            title="Receber"
+                                                        >
+                                                            💰
+                                                        </button>
+                                                    )}
                                                     <button
                                                         onClick={() => handleEditReceivable(item)}
                                                         className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
@@ -814,151 +836,6 @@ export default function FinancialDashboard() {
                     </div>
                 </div>
             )}
-
-            {/* Modal Contas a Receber (Edição) 
-            {showReceivableForm && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className={`${classes.card} rounded-lg p-6 w-96`}>
-                        <h3 className={`text-xl font-bold mb-4 ${classes.text}`}>
-                            Editar Conta a Receber
-                        </h3>
-                        <form onSubmit={handleUpdateReceivable} className="space-y-4">
-                            <div>
-                                <label className={`block text-sm font-medium mb-1 ${classes.text}`}>
-                                    Descrição *
-                                </label>
-                                <input
-                                    type="text"
-                                    className={`w-full p-2 border rounded 
-                                        ${theme === 'dracula' ? 'bg-[#44475a] border-[#6272a4] text-[#f8f8f2]' : 
-                                          theme === 'dark' ? 'bg-gray-700 border-gray-600 text-white' : 
-                                          'bg-white border-gray-300 text-gray-900'}
-                                        focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                                    value={receivableFormData.title}
-                                    onChange={(e) => setReceivableFormData({...receivableFormData, title: e.target.value})}
-                                    required
-                                />
-                            </div>
-
-                            <div>
-                                <label className={`block text-sm font-medium mb-1 ${classes.text}`}>
-                                    Valor (R$) *
-                                </label>
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
-                                    className={`w-full p-2 border rounded 
-                                        ${theme === 'dracula' ? 'bg-[#44475a] border-[#6272a4] text-[#f8f8f2]' : 
-                                          theme === 'dark' ? 'bg-gray-700 border-gray-600 text-white' : 
-                                          'bg-white border-gray-300 text-gray-900'}
-                                        focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                                    value={receivableFormData.amount}
-                                    onChange={(e) => setReceivableFormData({...receivableFormData, amount: e.target.value})}
-                                    required
-                                />
-                            </div>
-
-                            <div>
-                                <label className={`block text-sm font-medium mb-1 ${classes.text}`}>
-                                    Data de Vencimento *
-                                </label>
-                                <input
-                                    type="date"
-                                    className={`w-full p-2 border rounded 
-                                        ${theme === 'dracula' ? 'bg-[#44475a] border-[#6272a4] text-[#f8f8f2]' : 
-                                          theme === 'dark' ? 'bg-gray-700 border-gray-600 text-white' : 
-                                          'bg-white border-gray-300 text-gray-900'}
-                                        focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                                    value={receivableFormData.due_date}
-                                    onChange={(e) => setReceivableFormData({...receivableFormData, due_date: e.target.value})}
-                                    required
-                                />
-                            </div>
-
-                            <div>
-                                <label className={`block text-sm font-medium mb-1 ${classes.text}`}>
-                                    Data de Pagamento {editingReceivable?.status === 'pago' ? '(já recebido)' : '(opcional)'}
-                                </label>
-                                <input
-                                    type="date"
-                                    className={`w-full p-2 border rounded 
-                                        ${theme === 'dracula' ? 'bg-[#44475a] border-[#6272a4] text-[#f8f8f2]' : 
-                                          theme === 'dark' ? 'bg-gray-700 border-gray-600 text-white' : 
-                                          'bg-white border-gray-300 text-gray-900'}
-                                        focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                                    value={receivableFormData.payment_date}
-                                    onChange={(e) => setReceivableFormData({...receivableFormData, payment_date: e.target.value})}
-                                />
-                                <p className={`text-xs mt-1 ${classes.text} opacity-70`}>
-                                    Se já foi recebido, informe a data do recebimento
-                                </p>
-                            </div>
-
-                            <div>
-                                <label className={`block text-sm font-medium mb-1 ${classes.text}`}>
-                                    Status
-                                </label>
-                                <select
-                                    className={`w-full p-2 border rounded 
-                                        ${theme === 'dracula' ? 'bg-[#44475a] border-[#6272a4] text-[#f8f8f2]' : 
-                                          theme === 'dark' ? 'bg-gray-700 border-gray-600 text-white' : 
-                                          'bg-white border-gray-300 text-gray-900'}
-                                        focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                                    value={receivableFormData.status}
-                                    onChange={(e) => setReceivableFormData({...receivableFormData, status: e.target.value})}
-                                >
-                                    <option value="pendente">Pendente</option>
-                                    <option value="pago">Pago</option>
-                                    <option value="atrasado">Atrasado</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className={`block text-sm font-medium mb-1 ${classes.text}`}>
-                                    Observações
-                                </label>
-                                <textarea
-                                    rows="3"
-                                    className={`w-full p-2 border rounded 
-                                        ${theme === 'dracula' ? 'bg-[#44475a] border-[#6272a4] text-[#f8f8f2]' : 
-                                          theme === 'dark' ? 'bg-gray-700 border-gray-600 text-white' : 
-                                          'bg-white border-gray-300 text-gray-900'}
-                                        focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                                    value={receivableFormData.notes}
-                                    onChange={(e) => setReceivableFormData({...receivableFormData, notes: e.target.value})}
-                                />
-                            </div>
-
-                            <div className="flex space-x-3 pt-4">
-                                <button
-                                    type="submit"
-                                    className={`flex-1 py-2 rounded transition-colors
-                                        ${theme === 'dracula' 
-                                            ? 'bg-[#bd93f9] hover:bg-[#ff79c6] text-white' 
-                                            : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
-                                >
-                                    Atualizar
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setShowReceivableForm(false);
-                                        setEditingReceivable(null);
-                                        resetReceivableForm();
-                                    }}
-                                    className={`flex-1 py-2 rounded transition-colors
-                                        ${theme === 'dracula' 
-                                            ? 'bg-[#6272a4] hover:bg-[#44475a] text-[#f8f8f2]' 
-                                            : 'bg-gray-600 hover:bg-gray-700 text-white'}`}
-                                >
-                                    Cancelar
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}*}
 
             {/* Modal de Criação/Edição de Conta a Receber */}
             {showReceivableForm && (
