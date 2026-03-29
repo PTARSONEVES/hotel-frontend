@@ -74,7 +74,7 @@ export default function Footer() {
                     <div>
                         <h3 className={`text-lg font-bold mb-4 ${classes.text}`}>Contato</h3>
                         <ul className="space-y-2">
-                            <li className={classes.muted}>📞+55 (81) 9 9407 4680 (Salete)</li>
+                            <li className={classes.muted}>📞+55 (81) 9 8109 1970 (Salete)</li>
                             <li className={classes.muted}>✉️ reservas@ancorarportodegalinhas.com</li>
                             <li className={classes.muted}>📍 Porto de Galinhas, Ipojuca - PE</li>
                         </ul>
