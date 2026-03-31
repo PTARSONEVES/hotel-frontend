@@ -19,6 +19,7 @@ import CompleteRegistration from './pages/CompleteRegistration';
 import ConfirmEmail from './pages/ConfirmEmail';
 import SocialFacebook from './landing/pages/SocialFacebook';
 import SocialInstagram from './landing/pages/SocialInstagram';
+import Chatbot from './components/Chatbot';
 
 // Sistema
 import Dashboard from './pages/Dashboard';
@@ -275,6 +276,7 @@ function App() {
                     </Routes>
                 </AuthProvider>
                 <WhatsAppButton />
+                <Chatbot />
             </ThemeProvider>
         </BrowserRouter>
         
