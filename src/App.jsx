@@ -32,6 +32,7 @@ import Accounts from './pages/Accounts';
 import AccountForm from './pages/AccountForm';
 import AdminLeads from './pages/admin/Leads';
 import AdminUsers from './pages/admin/Users';
+import WhatsAppMessages from './pages/admin/WhatsAppMessages';
 import MyBookings from './pages/hospede/MyBookings';
 import MyProfile from './pages/hospede/MyProfile';
 import ChangePassword from './pages/ChangePassword';
@@ -48,7 +49,6 @@ import MaintenanceReports from './modules/maintenance/pages/Reports';
 import MaterialCategoryList from './modules/maintenance/pages/MaterialCategoryList';
 import WhatsAppButton from './components/WhatsAppButton';
 
-// Forçando novo Deploy 
 
 // Layout para rotas do sistema (com navbar)
 function SistemaLayout({ children }) {
@@ -169,6 +169,13 @@ function App() {
                             <PrivateRoute requiredPermission="gerenciar_usuarios">
                                 <SistemaLayout>
                                     <AdminUsers />
+                                </SistemaLayout>
+                            </PrivateRoute>
+                        } />
+                        <Route path="/admin/whatsapp" element={
+                            <PrivateRoute requiredPermission="ver_leads">
+                                <SistemaLayout>
+                                    <WhatsAppMessages />
                                 </SistemaLayout>
                             </PrivateRoute>
                         } />
