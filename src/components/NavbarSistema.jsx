@@ -115,6 +115,12 @@ export default function NavbarSistema() {
                     show: hasPermission('ver_almoxarifado')
                 },
                 {
+                    label: 'Categorias de Materiais',
+                    path: '/maintenance/material-categories',
+                    icon: '📁',
+                    show: hasPermission('ver_almoxarifado')
+                },
+                {
                     label: 'Relatórios',
                     path: '/maintenance/reports',
                     icon: '📈',

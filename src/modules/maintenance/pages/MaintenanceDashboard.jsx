@@ -80,6 +80,13 @@ export default function MaintenanceDashboard() {
             color: 'bg-green-500'
         },
         {
+            name: 'Categorias de Materiais',  // <-- NOVO CARD
+            path: '/maintenance/material-categories',
+            icon: '📁',
+            description: 'Gerenciar categorias do almoxarifado',
+            color: 'bg-yellow-500'
+        },
+        {
             name: 'Relatórios',
             path: '/maintenance/reports',
             icon: '📊',

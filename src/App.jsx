@@ -11,6 +11,8 @@ import About from './landing/pages/About';
 import Flats from './landing/pages/Flats';
 import Porto from './landing/pages/Porto';
 import PreBooking from './landing/pages/PreBooking';
+import ResetPassword from './landing/pages/ResetPassword';
+import ForgotPassword from './landing/pages/ForgotPassword';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import CompleteRegistration from './pages/CompleteRegistration';
@@ -41,6 +43,7 @@ import WorkOrderList from './modules/maintenance/pages/WorkOrderList';
 import WorkOrderDetail from './modules/maintenance/pages/WorkOrderDetail';
 import StockList from './modules/maintenance/pages/StockList';
 import MaintenanceReports from './modules/maintenance/pages/Reports';
+import MaterialCategoryList from './modules/maintenance/pages/MaterialCategoryList';
 
 // Forçando novo Deploy 
 
@@ -72,7 +75,8 @@ function App() {
                         <Route path="/register" element={<Register />} />
                         <Route path="/complete-registration" element={<CompleteRegistration />} />
                         <Route path="/confirm-email" element={<ConfirmEmail />} />
-
+                        <Route path="/forgot-password" element={<ForgotPassword />} />
+                        <Route path="/reset-password" element={<ResetPassword />} />
                         {/* Sistema */}
                         <Route path="/dashboard" element={
                             <PrivateRoute>
@@ -199,7 +203,14 @@ function App() {
                                 </SistemaLayout>
                             </PrivateRoute>
                         } />
-
+                        {/* Categorias de Materiais*/}
+                        <Route path="/maintenance/material-categories" element={
+                            <PrivateRoute requiredPermission="ver_almoxarifado">
+                                <SistemaLayout>
+                                    <MaterialCategoryList />
+                                </SistemaLayout>
+                            </PrivateRoute>
+                        } />
                         {/* Equipamentos */}
                         <Route path="/maintenance/equipment" element={
                             <PrivateRoute requiredPermission="ver_manutencao">
