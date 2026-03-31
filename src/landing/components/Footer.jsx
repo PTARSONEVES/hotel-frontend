@@ -44,12 +44,18 @@ export default function Footer() {
 
     // Função para abrir Instagram
     const openInstagram = () => {
-        window.open('https://www.instagram.com/reservas.ancorarporto', '_blank');
+        // Abre o Instagram diretamente na página
+        //window.open('https://www.instagram.com/reservas.ancorarporto', '_blank');
+        // Se quiser abrir uma página interna do site, use:
+        window.open('/instagram', '_blank');
     };
 
     // Função para abrir Facebook
     const openFacebook = () => {
-        window.open('https://www.facebook.com/flatancorarsal', '_blank');
+        // Abre o Facebook diretamente na página
+        //window.open('https://www.facebook.com/flatancorarsal', '_blank');
+        // Se quiser abrir uma página interna do site, use:
+        window.open('/facebook', '_blank');
     };
 
     // Função para ligar

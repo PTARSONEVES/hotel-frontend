@@ -17,6 +17,8 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import CompleteRegistration from './pages/CompleteRegistration';
 import ConfirmEmail from './pages/ConfirmEmail';
+import SocialFacebook from './landing/pages/SocialFacebook';
+import SocialInstagram from './landing/pages/SocialInstagram';
 
 // Sistema
 import Dashboard from './pages/Dashboard';
@@ -44,6 +46,7 @@ import WorkOrderDetail from './modules/maintenance/pages/WorkOrderDetail';
 import StockList from './modules/maintenance/pages/StockList';
 import MaintenanceReports from './modules/maintenance/pages/Reports';
 import MaterialCategoryList from './modules/maintenance/pages/MaterialCategoryList';
+import WhatsAppButton from './components/WhatsAppButton';
 
 // Forçando novo Deploy 
 
@@ -77,6 +80,8 @@ function App() {
                         <Route path="/confirm-email" element={<ConfirmEmail />} />
                         <Route path="/forgot-password" element={<ForgotPassword />} />
                         <Route path="/reset-password" element={<ResetPassword />} />
+                        <Route path="/facebook" element={<SocialFacebook />} />
+                        <Route path="/instagram" element={<SocialInstagram />} />
                         {/* Sistema */}
                         <Route path="/dashboard" element={
                             <PrivateRoute>
@@ -262,8 +267,10 @@ function App() {
                         } />
                     </Routes>
                 </AuthProvider>
+                <WhatsAppButton />
             </ThemeProvider>
         </BrowserRouter>
+        
     );
 }
 

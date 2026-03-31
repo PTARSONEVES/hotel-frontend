@@ -1,17 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import api from '../../../services/api';
 import { useTheme } from '../../../context/ThemeContext';
 import ThemeToggle from '../../../components/ThemeToggle';
+import ExportPDF from '../components/ExportPDF';
+import { OSStatusChart, MonthlyCostsChart, TopMaterialsChart, TopEquipmentChart } from '../components/Charts';
 
 export default function MaintenanceReports() {
     const [period, setPeriod] = useState({
         startDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
-        endDate: new Date().toISOString().split('T')[0]
+        endDate: new Date().toISOString().split('T')[0],
+        year: new Date().getFullYear()
     });
-    const [indicators, setIndicators] = useState([]);
-    const [consumption, setConsumption] = useState([]);
+    const [statusData, setStatusData] = useState(null);
+    const [costsData, setCostsData] = useState([]);
+    const [topMaterials, setTopMaterials] = useState([]);
+    const [topEquipment, setTopEquipment] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState('indicators');
+    const reportRef = useRef(null);
     const { theme } = useTheme();
 
     useEffect(() => {
@@ -21,14 +26,28 @@ export default function MaintenanceReports() {
     const loadData = async () => {
         setLoading(true);
         try {
-            const [indicatorsRes, consumptionRes] = await Promise.all([
-                api.get('/maintenance/reports/indicators', { params: period }),
-                api.get('/maintenance/reports/material-consumption', { params: period })
+            const [statusRes, costsRes, materialsRes, equipmentRes] = await Promise.all([
+                api.get('/maintenance/reports/os-by-status', { params: { startDate: period.startDate, endDate: period.endDate } }),
+                api.get('/maintenance/reports/monthly-costs', { params: { year: period.year } }),
+                api.get('/maintenance/reports/top-materials', { params: { startDate: period.startDate, endDate: period.endDate, limit: 10 } }),
+                api.get('/maintenance/reports/top-equipment', { params: { startDate: period.startDate, endDate: period.endDate, limit: 10 } })
             ]);
-            setIndicators(indicatorsRes.data);
-            setConsumption(consumptionRes.data);
+            
+            const aggregated = {
+                abertas: 0, em_andamento: 0, concluidas: 0, canceladas: 0
+            };
+            statusRes.data.forEach(item => {
+                if (item.status === 'aberta') aggregated.abertas = item.total;
+                else if (item.status === 'em_andamento') aggregated.em_andamento = item.total;
+                else if (item.status === 'concluida') aggregated.concluidas = item.total;
+                else if (item.status === 'cancelada') aggregated.canceladas = item.total;
+            });
+            setStatusData(aggregated);
+            setCostsData(costsRes.data);
+            setTopMaterials(materialsRes.data);
+            setTopEquipment(equipmentRes.data);
         } catch (error) {
-            console.error('Erro ao carregar relatórios:', error);
+            console.error('Erro ao carregar dados:', error);
         } finally {
             setLoading(false);
         }
@@ -39,47 +58,33 @@ export default function MaintenanceReports() {
             return {
                 card: 'bg-[#44475a]',
                 text: 'text-[#f8f8f2]',
-                accent: 'text-[#bd93f9]',
-                danger: 'text-[#ff5555]',
-                warning: 'text-[#f1fa8c]',
-                success: 'text-[#50fa7b]',
-                border: 'border-[#6272a4]'
+                border: 'border-[#6272a4]',
+                header: 'border-b border-[#6272a4]'
             };
         }
         if (theme === 'dark') {
             return {
                 card: 'bg-gray-800',
                 text: 'text-white',
-                accent: 'text-blue-400',
-                danger: 'text-red-400',
-                warning: 'text-yellow-400',
-                success: 'text-green-400',
-                border: 'border-gray-700'
+                border: 'border-gray-700',
+                header: 'border-b border-gray-700'
             };
         }
         return {
             card: 'bg-white',
             text: 'text-gray-900',
-            accent: 'text-blue-600',
-            danger: 'text-red-600',
-            warning: 'text-yellow-600',
-            success: 'text-green-600',
-            border: 'border-gray-200'
+            border: 'border-gray-200',
+            header: 'border-b border-gray-200'
         };
     };
 
     const classes = getThemeClasses();
 
-    const formatCurrency = (value) => {
-        return new Intl.NumberFormat('pt-BR', {
-            style: 'currency',
-            currency: 'BRL'
-        }).format(value || 0);
-    };
-
-    const formatNumber = (value) => {
-        return new Intl.NumberFormat('pt-BR').format(value || 0);
-    };
+    const totalOS = (statusData?.abertas || 0) + (statusData?.em_andamento || 0) + 
+                    (statusData?.concluidas || 0) + (statusData?.canceladas || 0);
+    const taxaConclusao = ((statusData?.concluidas || 0) / (totalOS - (statusData?.canceladas || 0)) * 100 || 0).toFixed(1);
+    const custoMedio = (costsData.reduce((sum, c) => sum + c.custo_mao_obra + c.custo_materiais, 0) / (statusData?.concluidas || 1) || 0).toFixed(2);
+    const eficiencia = ((statusData?.concluidas || 0) / totalOS * 100 || 0).toFixed(1);
 
     if (loading) {
         return (
@@ -97,233 +102,151 @@ export default function MaintenanceReports() {
             <div className="max-w-7xl mx-auto px-4">
                 <div className="flex justify-between items-center mb-8">
                     <h1 className={`text-3xl font-bold ${classes.text}`}>
-                        Relatórios de Manutenção
+                        Relatórios e Indicadores
                     </h1>
                     
-                    <div className="flex space-x-2">
-                        <input
-                            type="date"
-                            value={period.startDate}
-                            onChange={(e) => setPeriod({...period, startDate: e.target.value})}
-                            className={`px-3 py-2 border rounded ${classes.border} ${classes.text}`}
-                        />
-                        <input
-                            type="date"
-                            value={period.endDate}
-                            onChange={(e) => setPeriod({...period, endDate: e.target.value})}
-                            className={`px-3 py-2 border rounded ${classes.border} ${classes.text}`}
+                    <div className="flex items-center space-x-4">
+                        <div className="flex space-x-2">
+                            <input
+                                type="date"
+                                value={period.startDate}
+                                onChange={(e) => setPeriod({...period, startDate: e.target.value})}
+                                className={`px-3 py-2 border rounded ${classes.border} ${classes.text} bg-white dark:bg-gray-700`}
+                            />
+                            <input
+                                type="date"
+                                value={period.endDate}
+                                onChange={(e) => setPeriod({...period, endDate: e.target.value})}
+                                className={`px-3 py-2 border rounded ${classes.border} ${classes.text} bg-white dark:bg-gray-700`}
+                            />
+                            <input
+                                type="number"
+                                value={period.year}
+                                onChange={(e) => setPeriod({...period, year: parseInt(e.target.value)})}
+                                className={`px-3 py-2 border rounded w-24 ${classes.border} ${classes.text} bg-white dark:bg-gray-700`}
+                            />
+                        </div>
+                        
+                        <ExportPDF 
+                            targetRef={reportRef} 
+                            fileName="relatorio-manutencao"
+                            title="Relatório de Manutenção"
                         />
                     </div>
                 </div>
 
-                {/* Tabs */}
-                <div className="border-b mb-6">
-                    <nav className="flex space-x-4">
-                        <button
-                            onClick={() => setActiveTab('indicators')}
-                            className={`px-4 py-2 font-medium ${activeTab === 'indicators' ? classes.accent + ' border-b-2 border-current' : classes.text}`}
-                        >
-                            Indicadores
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('consumption')}
-                            className={`px-4 py-2 font-medium ${activeTab === 'consumption' ? classes.accent + ' border-b-2 border-current' : classes.text}`}
-                        >
-                            Consumo de Materiais
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('costs')}
-                            className={`px-4 py-2 font-medium ${activeTab === 'costs' ? classes.accent + ' border-b-2 border-current' : classes.text}`}
-                        >
-                            Custos por Equipamento
-                        </button>
-                    </nav>
-                </div>
-
-                {/* Tab Content */}
-                {activeTab === 'indicators' && (
-                    <div className="space-y-6">
-                        {/* Cards de Resumo */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className={`${classes.card} p-6 rounded-lg shadow`}>
-                                <p className={`text-sm ${classes.text} opacity-70`}>MTBF Médio</p>
-                                <p className={`text-3xl font-bold ${classes.text}`}>
-                                    {indicators.reduce((acc, i) => acc + (parseFloat(i.mtbf) || 0), 0) / indicators.length || 0} h
-                                </p>
-                                <p className={`text-xs ${classes.text} opacity-70`}>Tempo médio entre falhas</p>
-                            </div>
-                            <div className={`${classes.card} p-6 rounded-lg shadow`}>
-                                <p className={`text-sm ${classes.text} opacity-70`}>MTTR Médio</p>
-                                <p className={`text-3xl font-bold ${classes.text}`}>
-                                    {indicators.reduce((acc, i) => acc + (i.mttr || 0), 0) / indicators.length || 0} h
-                                </p>
-                                <p className={`text-xs ${classes.text} opacity-70`}>Tempo médio de reparo</p>
-                            </div>
-                            <div className={`${classes.card} p-6 rounded-lg shadow`}>
-                                <p className={`text-sm ${classes.text} opacity-70`}>Disponibilidade</p>
-                                <p className={`text-3xl font-bold ${classes.success}`}>
-                                    {indicators.length > 0 ? 
-                                        ((indicators.reduce((acc, i) => acc + (parseFloat(i.mtbf) || 0), 0) / 
-                                          (indicators.reduce((acc, i) => acc + (parseFloat(i.mtbf) || 0), 0) + 
-                                           indicators.reduce((acc, i) => acc + (i.mttr || 0), 0))) * 100 || 0).toFixed(1) 
-                                        : 0}%
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Tabela de Indicadores por Equipamento */}
-                        <div className={`${classes.card} rounded-lg shadow overflow-hidden`}>
-                            <div className="p-4 border-b">
-                                <h2 className={`text-lg font-bold ${classes.text}`}>Indicadores por Equipamento</h2>
-                            </div>
-                            <div className="overflow-x-auto">
-                                <table className="min-w-full">
-                                    <thead className="bg-gray-50 dark:bg-gray-700">
-                                        <tr>
-                                            <th className={`px-4 py-2 text-left ${classes.text}`}>Equipamento</th>
-                                            <th className={`px-4 py-2 text-right ${classes.text}`}>Falhas</th>
-                                            <th className={`px-4 py-2 text-right ${classes.text}`}>MTBF (h)</th>
-                                            <th className={`px-4 py-2 text-right ${classes.text}`}>MTTR (h)</th>
-                                            <th className={`px-4 py-2 text-right ${classes.text}`}>OS Realizadas</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {indicators.map((item, idx) => (
-                                            <tr key={idx} className="border-t">
-                                                <td className={`px-4 py-2 ${classes.text}`}>{item.name}</td>
-                                                <td className={`px-4 py-2 text-right ${classes.text}`}>{item.failure_count || 0}</td>
-                                                <td className={`px-4 py-2 text-right ${classes.text}`}>{item.mtbf || 0}</td>
-                                                <td className={`px-4 py-2 text-right ${classes.text}`}>{item.mttr || 0}</td>
-                                                <td className={`px-4 py-2 text-right ${classes.text}`}>{item.total_orders || 0}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                {/* Conteúdo do Relatório */}
+                <div ref={reportRef}>
+                    {/* Cabeçalho do Relatório */}
+                    <div className={`${classes.card} p-6 rounded-lg shadow mb-6`}>
+                        <div className="text-center">
+                            <h2 className={`text-2xl font-bold ${classes.text}`}>Relatório de Manutenção</h2>
+                            <p className={`${classes.text} opacity-70 mt-2`}>
+                                Período: {new Date(period.startDate).toLocaleDateString()} a {new Date(period.endDate).toLocaleDateString()}
+                            </p>
+                            <p className={`${classes.text} opacity-70`}>
+                                Gerado em: {new Date().toLocaleString()}
+                            </p>
                         </div>
                     </div>
-                )}
 
-                {activeTab === 'consumption' && (
-                    <div className={`${classes.card} rounded-lg shadow overflow-hidden`}>
-                        <div className="p-4 border-b">
-                            <h2 className={`text-lg font-bold ${classes.text}`}>Consumo de Materiais no Período</h2>
+                    {/* Cards de Resumo */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                        <div className={`${classes.card} p-4 rounded-lg shadow text-center`}>
+                            <p className={`text-sm ${classes.text} opacity-70`}>Total de OS no Período</p>
+                            <p className={`text-2xl font-bold ${classes.text}`}>{totalOS}</p>
                         </div>
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full">
-                                <thead className="bg-gray-50 dark:bg-gray-700">
-                                    <tr>
-                                        <th className={`px-4 py-2 text-left ${classes.text}`}>Material</th>
-                                        <th className={`px-4 py-2 text-left ${classes.text}`}>Categoria</th>
-                                        <th className={`px-4 py-2 text-right ${classes.text}`}>Quantidade</th>
-                                        <th className={`px-4 py-2 text-right ${classes.text}`}>Custo Total</th>
-                                        <th className={`px-4 py-2 text-right ${classes.text}`}>OS Utilizadas</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {consumption.map((item, idx) => (
-                                        <tr key={idx} className="border-t">
-                                            <td className={`px-4 py-2 ${classes.text}`}>{item.name}</td>
-                                            <td className={`px-4 py-2 ${classes.text}`}>{item.category}</td>
-                                            <td className={`px-4 py-2 text-right ${classes.text}`}>
-                                                {formatNumber(item.total_quantity)} {item.unit}
-                                            </td>
-                                            <td className={`px-4 py-2 text-right ${classes.text}`}>
-                                                {formatCurrency(item.total_cost)}
-                                            </td>
-                                            <td className={`px-4 py-2 text-right ${classes.text}`}>{item.orders_used}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                                <tfoot className="bg-gray-50 dark:bg-gray-700">
-                                    <tr>
-                                        <td colSpan="3" className={`px-4 py-2 text-right font-bold ${classes.text}`}>Total</td>
-                                        <td className={`px-4 py-2 text-right font-bold ${classes.accent}`}>
-                                            {formatCurrency(consumption.reduce((acc, i) => acc + i.total_cost, 0))}
-                                        </td>
-                                        <td></td>
-                                    </tr>
-                                </tfoot>
-                            </table>
+                        <div className={`${classes.card} p-4 rounded-lg shadow text-center`}>
+                            <p className={`text-sm ${classes.text} opacity-70`}>Taxa de Conclusão</p>
+                            <p className={`text-2xl font-bold text-green-600`}>{taxaConclusao}%</p>
+                        </div>
+                        <div className={`${classes.card} p-4 rounded-lg shadow text-center`}>
+                            <p className={`text-sm ${classes.text} opacity-70`}>Custo Médio por OS</p>
+                            <p className={`text-2xl font-bold ${classes.text}`}>R$ {custoMedio}</p>
+                        </div>
+                        <div className={`${classes.card} p-4 rounded-lg shadow text-center`}>
+                            <p className={`text-sm ${classes.text} opacity-70`}>Eficiência</p>
+                            <p className={`text-2xl font-bold text-blue-600`}>{eficiencia}%</p>
                         </div>
                     </div>
-                )}
 
-                {activeTab === 'costs' && (
-                    <div className="grid gap-4">
-                        {/* Gráfico de Custos - Simulado com Cards */}
+                    {/* Gráficos */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                         <div className={`${classes.card} p-6 rounded-lg shadow`}>
-                            <h2 className={`text-lg font-bold mb-4 ${classes.text}`}>Custos por Tipo de Manutenção</h2>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <p className={`text-sm ${classes.text} opacity-70`}>Preventiva</p>
-                                    <p className={`text-2xl font-bold ${classes.success}`}>
-                                        {formatCurrency(indicators.reduce((acc, i) => acc + (i.preventive_cost || 0), 0))}
-                                    </p>
-                                </div>
-                                <div>
-                                    <p className={`text-sm ${classes.text} opacity-70`}>Corretiva</p>
-                                    <p className={`text-2xl font-bold ${classes.danger}`}>
-                                        {formatCurrency(indicators.reduce((acc, i) => acc + (i.corrective_cost || 0), 0))}
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="mt-4">
-                                <div className="flex justify-between text-sm mb-1">
-                                    <span className={classes.text}>Relação Preventiva/Corretiva</span>
-                                    <span className={classes.text}>
-                                        {indicators.reduce((acc, i) => acc + (i.preventive_cost || 0), 0) > 0 ?
-                                            ((indicators.reduce((acc, i) => acc + (i.preventive_cost || 0), 0) /
-                                              (indicators.reduce((acc, i) => acc + (i.corrective_cost || 0), 0) + 
-                                               indicators.reduce((acc, i) => acc + (i.preventive_cost || 0), 0))) * 100 || 0).toFixed(1)
-                                            : 0}% Preventiva
-                                    </span>
-                                </div>
-                                <div className="w-full bg-gray-200 rounded-full h-2.5">
-                                    <div 
-                                        className="bg-green-600 h-2.5 rounded-full" 
-                                        style={{ 
-                                            width: `${indicators.reduce((acc, i) => acc + (i.preventive_cost || 0), 0) > 0 ?
-                                                (indicators.reduce((acc, i) => acc + (i.preventive_cost || 0), 0) /
-                                                 (indicators.reduce((acc, i) => acc + (i.corrective_cost || 0), 0) + 
-                                                  indicators.reduce((acc, i) => acc + (i.preventive_cost || 0), 0))) * 100 || 0
-                                                : 0}%` 
-                                        }}
-                                    ></div>
+                            <h2 className={`text-lg font-bold mb-4 ${classes.text}`}>OS por Status</h2>
+                            <OSStatusChart data={statusData} />
+                            <div className={`mt-4 pt-4 ${classes.header}`}>
+                                <div className="grid grid-cols-2 gap-2 text-sm">
+                                    <div className="flex justify-between">
+                                        <span className={classes.text}>Abertas:</span>
+                                        <span className={`font-bold ${classes.text}`}>{statusData?.abertas || 0}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className={classes.text}>Em Andamento:</span>
+                                        <span className={`font-bold ${classes.text}`}>{statusData?.em_andamento || 0}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className={classes.text}>Concluídas:</span>
+                                        <span className={`font-bold ${classes.text}`}>{statusData?.concluidas || 0}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className={classes.text}>Canceladas:</span>
+                                        <span className={`font-bold ${classes.text}`}>{statusData?.canceladas || 0}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                        
+                        <div className={`${classes.card} p-6 rounded-lg shadow`}>
+                            <h2 className={`text-lg font-bold mb-4 ${classes.text}`}>Custos Mensais</h2>
+                            <MonthlyCostsChart data={costsData} />
+                        </div>
+                    </div>
 
-                        {/* Tabela de Custos por Equipamento */}
-                        <div className={`${classes.card} rounded-lg shadow overflow-hidden`}>
-                            <div className="p-4 border-b">
-                                <h2 className={`text-lg font-bold ${classes.text}`}>Custos por Equipamento</h2>
-                            </div>
-                            <div className="overflow-x-auto">
-                                <table className="min-w-full">
-                                    <thead className="bg-gray-50 dark:bg-gray-700">
-                                        <tr>
-                                            <th className={`px-4 py-2 text-left ${classes.text}`}>Equipamento</th>
-                                            <th className={`px-4 py-2 text-right ${classes.text}`}>Custo Total</th>
-                                            <th className={`px-4 py-2 text-right ${classes.text}`}>Custo Preventiva</th>
-                                            <th className={`px-4 py-2 text-right ${classes.text}`}>Custo Corretiva</th>
-                                            <th className={`px-4 py-2 text-right ${classes.text}`}>Nº OS</th>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                        <div className={`${classes.card} p-6 rounded-lg shadow`}>
+                            <h2 className={`text-lg font-bold mb-4 ${classes.text}`}>Top 10 Materiais Mais Utilizados</h2>
+                            <TopMaterialsChart data={topMaterials} />
+                            <div className={`mt-4 pt-4 ${classes.header}`}>
+                                <table className="w-full text-sm">
+                                    <thead>
+                                        <tr className="border-b">
+                                            <th className={`text-left py-1 ${classes.text}`}>Material</th>
+                                            <th className={`text-right py-1 ${classes.text}`}>Quantidade</th>
+                                            <th className={`text-right py-1 ${classes.text}`}>Custo</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {indicators.map((item, idx) => (
-                                            <tr key={idx} className="border-t">
-                                                <td className={`px-4 py-2 ${classes.text}`}>{item.name}</td>
-                                                <td className={`px-4 py-2 text-right ${classes.text}`}>
-                                                    {formatCurrency((item.preventive_cost || 0) + (item.corrective_cost || 0))}
-                                                </td>
-                                                <td className={`px-4 py-2 text-right ${classes.success}`}>
-                                                    {formatCurrency(item.preventive_cost || 0)}
-                                                </td>
-                                                <td className={`px-4 py-2 text-right ${classes.danger}`}>
-                                                    {formatCurrency(item.corrective_cost || 0)}
-                                                </td>
-                                                <td className={`px-4 py-2 text-right ${classes.text}`}>{item.total_orders || 0}</td>
+                                        {topMaterials.slice(0, 5).map(mat => (
+                                            <tr key={mat.id} className="border-b">
+                                                <td className={`py-1 ${classes.text}`}>{mat.name}</td>
+                                                <td className={`py-1 text-right ${classes.text}`}>{mat.total_quantidade}</td>
+                                                <td className={`py-1 text-right ${classes.text}`}>R$ {mat.total_custo.toFixed(2)}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <div className={`${classes.card} p-6 rounded-lg shadow`}>
+                            <h2 className={`text-lg font-bold mb-4 ${classes.text}`}>Top 10 Equipamentos com Mais OS</h2>
+                            <TopEquipmentChart data={topEquipment} />
+                            <div className={`mt-4 pt-4 ${classes.header}`}>
+                                <table className="w-full text-sm">
+                                    <thead>
+                                        <tr className="border-b">
+                                            <th className={`text-left py-1 ${classes.text}`}>Equipamento</th>
+                                            <th className={`text-right py-1 ${classes.text}`}>Total OS</th>
+                                            <th className={`text-right py-1 ${classes.text}`}>Concluídas</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {topEquipment.slice(0, 5).map(eq => (
+                                            <tr key={eq.id} className="border-b">
+                                                <td className={`py-1 ${classes.text}`}>{eq.name}</td>
+                                                <td className={`py-1 text-right ${classes.text}`}>{eq.total_os}</td>
+                                                <td className={`py-1 text-right ${classes.text}`}>{eq.concluidas}</td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -331,7 +254,7 @@ export default function MaintenanceReports() {
                             </div>
                         </div>
                     </div>
-                )}
+                </div>
             </div>
         </div>
     );

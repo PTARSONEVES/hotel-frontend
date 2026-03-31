@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import ThemeToggle from './ThemeToggle';
 import AlertBell from './AlertBell';
+import NotificationBell from './NotificationBell';
 
 export default function NavbarSistema() {
     const { user, logout, hasPermission, hasMinRole } = useAuth();
@@ -146,14 +147,6 @@ export default function NavbarSistema() {
             icon: '📋',
             show: user?.role === 'hospede'
         }
-/*
-        {
-            label: 'Manutenção',
-            path: '/maintenance',
-            icon: '🔧',
-            show: hasPermission('ver_manutencao')
-        }
-*/
         ].filter(item => item.show);
 
     // Menu do usuário
@@ -208,6 +201,7 @@ export default function NavbarSistema() {
                     {/* Área Direita */}
                     <div className="flex items-center space-x-3">
                         <AlertBell />
+                        <NotificationBell />
                         <ThemeToggle />
 
                         {/* Menu do Usuário */}

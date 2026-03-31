@@ -92,6 +92,14 @@ export default function LandingHeader() {
                         >
                             Login
                         </Link>
+                        <a
+                            href="https://wa.me/558181091970?text=Olá! Gostaria de mais informações sobre o Ancorar Flat Resort."
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                        >
+                            WhatsApp
+                        </a>
                     </div>
 
                     {/* Botão Menu Mobile */}
