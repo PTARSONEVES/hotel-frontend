@@ -5,6 +5,7 @@ import { useTheme } from '../context/ThemeContext';
 import ThemeToggle from './ThemeToggle';
 import AlertBell from './AlertBell';
 import NotificationBell from './NotificationBell';
+import BehaviorAlertBell from './BehaviorAlertBell';
 
 export default function NavbarSistema() {
     const { user, logout, hasPermission, hasMinRole } = useAuth();
@@ -207,6 +208,7 @@ export default function NavbarSistema() {
                     {/* Área Direita */}
                     <div className="flex items-center space-x-3">
                         <AlertBell />
+                        <BehaviorAlertBell />
                         <NotificationBell />
                         <ThemeToggle />
 
