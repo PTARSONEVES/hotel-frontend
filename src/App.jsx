@@ -20,6 +20,7 @@ import ConfirmEmail from './pages/ConfirmEmail';
 import SocialFacebook from './landing/pages/SocialFacebook';
 import SocialInstagram from './landing/pages/SocialInstagram';
 import Chatbot from './components/Chatbot';
+import CookieConsent from './components/CookieConsent';
 
 // Sistema
 import Dashboard from './pages/Dashboard';
@@ -34,6 +35,7 @@ import AccountForm from './pages/AccountForm';
 import AdminLeads from './pages/admin/Leads';
 import AdminUsers from './pages/admin/Users';
 import WhatsAppMessages from './pages/admin/WhatsAppMessages';
+import VisitorDashboard from './pages/admin/VisitorDashboard';
 import MyBookings from './pages/hospede/MyBookings';
 import MyProfile from './pages/hospede/MyProfile';
 import ChangePassword from './pages/ChangePassword';
@@ -180,7 +182,13 @@ function App() {
                                 </SistemaLayout>
                             </PrivateRoute>
                         } />
-
+                        <Route path="/admin/visitors" element={
+                            <PrivateRoute requiredPermission="admin">
+                                <SistemaLayout>
+                                    <VisitorDashboard />
+                                </SistemaLayout>
+                            </PrivateRoute>
+                        } />
                         {/* Módulo Hóspede */}
                         <Route path="/my-bookings" element={
                             <PrivateRoute requiredRole="hospede">
@@ -277,6 +285,7 @@ function App() {
                 </AuthProvider>
                 <WhatsAppButton />
                 <Chatbot />
+                <CookieConsent />
             </ThemeProvider>
         </BrowserRouter>
         

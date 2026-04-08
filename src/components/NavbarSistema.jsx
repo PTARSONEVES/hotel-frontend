@@ -142,6 +142,12 @@ export default function NavbarSistema() {
             show: hasPermission('gerenciar_usuarios')
         },
         {
+            label: 'Visitantes',
+            path: '/admin/visitors',
+            icon: '👥',
+            show: hasPermission('admin')
+        },
+        {
             label: 'Minhas Reservas',
             path: '/my-bookings',
             icon: '📋',
