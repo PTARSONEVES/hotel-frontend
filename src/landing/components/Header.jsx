@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
 import ThemeToggle from '../../components/ThemeToggle';
+import Logo from '../../components/Logo';
 
 export default function LandingHeader() {
     const [isScrolled, setIsScrolled] = useState(false);
@@ -58,10 +59,8 @@ export default function LandingHeader() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center h-20">
                     {/* Logo */}
-                    <Link to="/" className="flex items-center space-x-2">
-                        <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                            Ancorar Flat Resort
-                        </span>
+                    <Link to="/" className="flex items-center">
+                        <Logo className="h-14 w-auto" />
                     </Link>
 
                     {/* Menu Desktop */}
