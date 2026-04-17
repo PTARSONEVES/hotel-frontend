@@ -2,24 +2,30 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../../services/api';
 import { useTheme } from '../../../context/ThemeContext';
+import { useAuth } from '../../../context/AuthContext';
 import ThemeToggle from '../../../components/ThemeToggle';
+import BookingEditModal from '../components/BookingEditModal';
 
 export default function BookingList() {
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showDetails, setShowDetails] = useState(null);
-    const [searchCode, setSearchCode] = useState(''); // <-- NOVO
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [selectedBooking, setSelectedBooking] = useState(null);
     const [filters, setFilters] = useState({
         status: '',
         startDate: '',
-        endDate: '',
-        code: '' 
+        endDate: ''
     });
     const { theme } = useTheme();
+    const { user, hasPermission } = useAuth();
+
+    // Verificar se pode editar
+    const canEdit = user?.role === 'admin' || user?.role === 'colaborador';
 
     useEffect(() => {
         loadBookings();
-    }, [filters, searchCode]);
+    }, [filters]);
 
     const loadBookings = async () => {
         try {
@@ -28,7 +34,6 @@ export default function BookingList() {
             if (filters.status) params.append('status', filters.status);
             if (filters.startDate) params.append('startDate', filters.startDate);
             if (filters.endDate) params.append('endDate', filters.endDate);
-            if (filters.code) params.append('code', filters.code); // <-- NOVO
             
             const response = await api.get(`/hotel/bookings?${params}`);
             setBookings(response.data);
@@ -39,8 +44,54 @@ export default function BookingList() {
         }
     };
 
-    const handleClearSearch = () => {
-        setSearchCode('');
+    // =====================================================
+    // FUNÇÕES DE AÇÃO
+    // =====================================================
+    
+    const handleEdit = (booking) => {
+        setSelectedBooking(booking);
+        setShowEditModal(true);
+    };
+
+    const handleCheckIn = async (bookingId) => {
+        try {
+            await api.post(`/hotel/bookings/${bookingId}/checkin`);
+            loadBookings();
+            alert('Check-in realizado com sucesso!');
+        } catch (error) {
+            alert(error.response?.data?.error || 'Erro ao realizar check-in');
+        }
+    };
+
+    const handleCheckOut = async (bookingId) => {
+        const paymentMethod = prompt('Forma de pagamento (dinheiro, cartao_credito, cartao_debito, pix, transferencia):');
+        if (!paymentMethod) return;
+        
+        const paidAmount = prompt('Valor pago (R$):');
+        if (!paidAmount) return;
+        
+        try {
+            await api.post(`/hotel/bookings/${bookingId}/checkout`, {
+                payment_method: paymentMethod,
+                paid_amount: parseFloat(paidAmount)
+            });
+            loadBookings();
+            alert('Check-out realizado com sucesso!');
+        } catch (error) {
+            alert(error.response?.data?.error || 'Erro ao realizar check-out');
+        }
+    };
+
+    const handleCancel = async (bookingId) => {
+        if (!confirm('Tem certeza que deseja cancelar esta reserva?')) return;
+        
+        try {
+            await api.post(`/hotel/bookings/${bookingId}/cancel`);
+            loadBookings();
+            alert('Reserva cancelada com sucesso!');
+        } catch (error) {
+            alert(error.response?.data?.error || 'Erro ao cancelar reserva');
+        }
     };
 
     const getStatusBadge = (status) => {
@@ -88,10 +139,7 @@ export default function BookingList() {
                 card: 'bg-[#44475a]',
                 text: 'text-[#f8f8f2]',
                 border: 'border-[#6272a4]',
-                code: 'font-mono text-sm text-[#bd93f9]',
-                input: 'bg-[#282a36] border-[#6272a4] text-[#f8f8f2] placeholder-[#6272a4]',
-                button: 'bg-[#bd93f9] hover:bg-[#ff79c6] text-white',
-                cancelButton: 'bg-[#6272a4] hover:bg-[#44475a] text-[#f8f8f2]'
+                code: 'font-mono text-sm text-[#bd93f9]'
             };
         }
         if (theme === 'dark') {
@@ -99,29 +147,18 @@ export default function BookingList() {
                 card: 'bg-gray-800',
                 text: 'text-white',
                 border: 'border-gray-700',
-                code: 'font-mono text-sm text-blue-400',
-                input: 'bg-gray-700 border-gray-600 text-white placeholder-gray-400',
-                button: 'bg-blue-600 hover:bg-blue-700 text-white',
-                cancelButton: 'bg-gray-600 hover:bg-gray-500 text-white'
+                code: 'font-mono text-sm text-blue-400'
             };
         }
         return {
             card: 'bg-white',
             text: 'text-gray-900',
             border: 'border-gray-200',
-            code: 'font-mono text-sm text-blue-600',
-            input: 'bg-white border-gray-300 text-gray-900 placeholder-gray-400',
-            button: 'bg-blue-600 hover:bg-blue-700 text-white',
-            cancelButton: 'bg-gray-500 hover:bg-gray-600 text-white'
+            code: 'font-mono text-sm text-blue-600'
         };
     };
 
     const classes = getThemeClasses();
-
-    const copyToClipboard = (code) => {
-        navigator.clipboard.writeText(code);
-        alert('Código copiado!');
-    };
 
     if (loading) {
         return (
@@ -151,41 +188,9 @@ export default function BookingList() {
 
                 {/* Filtros */}
                 <div className={`${classes.card} p-4 rounded-lg shadow mb-6`}>
-                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                        {/* Busca por Código */}
-                        <div className="relative">
-                            <input
-                                type="text"
-                                placeholder="Buscar por código..."
-                                value={searchCode}
-                                onChange={(e) => setSearchCode(e.target.value)}
-                                className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 
-                                    ${theme === 'dracula' 
-                                        ? 'bg-[#282a36] border-[#6272a4] text-[#f8f8f2] placeholder-[#6272a4]' 
-                                        : theme === 'dark' 
-                                        ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                                        : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'}`}
-                            />
-                            {searchCode && (
-                                <button
-                                    onClick={handleClearSearch}
-                                    className={`absolute right-2 top-2 ${
-                                        theme === 'dracula' ? 'text-[#6272a4] hover:text-[#f8f8f2]' : 'text-gray-400 hover:text-gray-600'
-                                    }`}
-                                >
-                                    ✕
-                                </button>
-                            )}
-                        </div>
-                        
-                        {/* Filtro Status */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <select
-                            className={`p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500
-                                ${theme === 'dracula' 
-                                    ? 'bg-[#282a36] border-[#6272a4] text-[#f8f8f2]' 
-                                    : theme === 'dark' 
-                                    ? 'bg-gray-700 border-gray-600 text-white' 
-                                    : 'bg-white border-gray-300 text-gray-900'}`}
+                            className={`p-2 border rounded ${classes.border} ${classes.text}`}
                             value={filters.status}
                             onChange={(e) => setFilters({...filters, status: e.target.value})}
                         >
@@ -197,43 +202,23 @@ export default function BookingList() {
                             <option value="cancelado">Cancelado</option>
                         </select>
                         
-                        {/* Filtro Data Inicial */}
                         <input
                             type="date"
-                            className={`p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500
-                                ${theme === 'dracula' 
-                                    ? 'bg-[#282a36] border-[#6272a4] text-[#f8f8f2]' 
-                                    : theme === 'dark' 
-                                    ? 'bg-gray-700 border-gray-600 text-white' 
-                                    : 'bg-white border-gray-300 text-gray-900'}`}
+                            className={`p-2 border rounded ${classes.border} ${classes.text}`}
                             value={filters.startDate}
                             onChange={(e) => setFilters({...filters, startDate: e.target.value})}
-                            placeholder="Data inicial"
                         />
                         
-                        {/* Filtro Data Final */}
                         <input
                             type="date"
-                            className={`p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500
-                                ${theme === 'dracula' 
-                                    ? 'bg-[#282a36] border-[#6272a4] text-[#f8f8f2]' 
-                                    : theme === 'dark' 
-                                    ? 'bg-gray-700 border-gray-600 text-white' 
-                                    : 'bg-white border-gray-300 text-gray-900'}`}
+                            className={`p-2 border rounded ${classes.border} ${classes.text}`}
                             value={filters.endDate}
                             onChange={(e) => setFilters({...filters, endDate: e.target.value})}
-                            placeholder="Data final"
                         />
                         
-                        {/* Botão Limpar */}
                         <button
                             onClick={() => setFilters({status: '', startDate: '', endDate: ''})}
-                            className={`px-4 py-2 rounded transition-colors
-                                ${theme === 'dracula' 
-                                    ? 'bg-[#6272a4] hover:bg-[#44475a] text-[#f8f8f2]' 
-                                    : theme === 'dark' 
-                                    ? 'bg-gray-600 hover:bg-gray-500 text-white' 
-                                    : 'bg-gray-500 hover:bg-gray-600 text-white'}`}
+                            className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
                         >
                             Limpar Filtros
                         </button>
@@ -273,28 +258,15 @@ export default function BookingList() {
                                     <th className={`px-6 py-3 text-center text-xs font-medium uppercase tracking-wider ${classes.text}`}>
                                         Ações
                                     </th>
-                                 </tr>
+                                </tr>
                             </thead>
                             <tbody className="divide-y">
                                 {bookings.map(booking => (
                                     <tr key={booking.id} className={`${classes.text} hover:bg-gray-50 dark:hover:bg-gray-700`}>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex items-center space-x-2">
-                                                <code className={`${classes.code} cursor-pointer`}
-                                                      onClick={() => copyToClipboard(booking.operation_code)}
-                                                      title="Clique para copiar">
-                                                    {booking.operation_code || '-'}
-                                                </code>
-                                                {booking.operation_code && (
-                                                    <button
-                                                        onClick={() => copyToClipboard(booking.operation_code)}
-                                                        className="text-xs opacity-50 hover:opacity-100"
-                                                        title="Copiar código"
-                                                    >
-                                                        📋
-                                                    </button>
-                                                )}
-                                            </div>
+                                            <code className={`text-xs font-mono ${classes.code}`}>
+                                                {booking.operation_code || '-'}
+                                            </code>
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="font-medium">{booking.guest_name}</div>
@@ -326,25 +298,60 @@ export default function BookingList() {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-center">
-                                            <button
-                                                onClick={() => setShowDetails(booking)}
-                                                className="text-blue-600 hover:text-blue-800"
-                                                title="Detalhes"
-                                            >
-                                                👁️
-                                            </button>
+                                            <div className="flex justify-center space-x-2">
+                                                <button
+                                                    onClick={() => setShowDetails(booking)}
+                                                    className="text-blue-600 hover:text-blue-800"
+                                                    title="Detalhes"
+                                                >
+                                                    👁️
+                                                </button>
+                                                
+                                                {canEdit && (
+                                                    <button
+                                                        onClick={() => handleEdit(booking)}
+                                                        className="text-green-600 hover:text-green-800"
+                                                        title="Editar"
+                                                    >
+                                                        ✏️
+                                                    </button>
+                                                )}
+                                                
+                                                {booking.status === 'reservado' && (
+                                                    <>
+                                                        <button
+                                                            onClick={() => handleCheckIn(booking.id)}
+                                                            className="text-green-600 hover:text-green-800"
+                                                            title="Check-in"
+                                                        >
+                                                            ✅
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleCancel(booking.id)}
+                                                            className="text-red-600 hover:text-red-800"
+                                                            title="Cancelar"
+                                                        >
+                                                            ❌
+                                                        </button>
+                                                    </>
+                                                )}
+                                                
+                                                {booking.status === 'checkin' && (
+                                                    <button
+                                                        onClick={() => handleCheckOut(booking.id)}
+                                                        className="text-orange-600 hover:text-orange-800"
+                                                        title="Check-out"
+                                                    >
+                                                        🏁
+                                                    </button>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
                     </div>
-
-                    {bookings.length === 0 && (
-                        <div className="p-8 text-center">
-                            <p className={classes.text}>Nenhuma reserva encontrada</p>
-                        </div>
-                    )}
                 </div>
             </div>
 
@@ -354,24 +361,23 @@ export default function BookingList() {
                     <div className={`${classes.card} rounded-lg p-6 w-[500px] max-h-[90vh] overflow-y-auto`}>
                         <h3 className={`text-xl font-bold mb-4 ${classes.text}`}>Detalhes da Reserva</h3>
                         
-                        {/* Código da Reserva */}
                         {showDetails.operation_code && (
-                            <div className={`mb-4 p-3 rounded-lg bg-gray-100 dark:bg-gray-700`}>
+                            <div className="mb-4 p-3 rounded-lg bg-gray-100 dark:bg-gray-700">
                                 <p className={`text-xs ${classes.text} opacity-70`}>Código da Reserva</p>
                                 <div className="flex items-center justify-between">
                                     <code className={`text-lg font-bold font-mono ${classes.code}`}>
                                         {showDetails.operation_code}
                                     </code>
                                     <button
-                                        onClick={() => copyToClipboard(showDetails.operation_code)}
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(showDetails.operation_code);
+                                            alert('Código copiado!');
+                                        }}
                                         className="px-2 py-1 bg-blue-600 text-white rounded text-sm"
                                     >
                                         Copiar
                                     </button>
                                 </div>
-                                <p className={`text-xs ${classes.text} opacity-50 mt-1`}>
-                                    Padrão EAN-13 | Leitura por código de barras
-                                </p>
                             </div>
                         )}
                         
@@ -429,6 +435,18 @@ export default function BookingList() {
                         </button>
                     </div>
                 </div>
+            )}
+
+            {/* Modal de Edição */}
+            {showEditModal && selectedBooking && (
+                <BookingEditModal
+                    booking={selectedBooking}
+                    onClose={() => {
+                        setShowEditModal(false);
+                        setSelectedBooking(null);
+                    }}
+                    onSuccess={loadBookings}
+                />
             )}
         </div>
     );

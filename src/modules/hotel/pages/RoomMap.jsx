@@ -42,6 +42,15 @@ export default function RoomMap() {
             <pre className="bg-gray-100 p-4 rounded overflow-auto">
                 {JSON.stringify(data, null, 2)}
             </pre>
+            <div className="text-xs mt-2 pt-2 border-t border-current">
+                {room.block && <div className="opacity-75">Bloco: {room.block}</div>}
+                {room.ownership && (
+                    <div className="opacity-75">
+                        {room.ownership === 'proprio' ? '🏢 Próprio' : '🤝 Terceiro'}
+                    </div>
+                )}
+            </div>
         </div>
+
     );
 }

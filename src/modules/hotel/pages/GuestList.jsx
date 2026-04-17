@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../../services/api';
 import { useTheme } from '../../../context/ThemeContext';
+import { useAuth } from '../../../context/AuthContext';
 import ThemeToggle from '../../../components/ThemeToggle';
 
 export default function GuestList() {
@@ -9,8 +10,10 @@ export default function GuestList() {
     const [loading, setLoading] = useState(true);
     const [searchCode, setSearchCode] = useState('');
     const [showDetails, setShowDetails] = useState(null);
-    const [showForm, setShowForm] = useState(false);  // <-- NOVO
-    const [formData, setFormData] = useState({       // <-- NOVO
+    const [showForm, setShowForm] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [editingGuest, setEditingGuest] = useState(null);
+    const [formData, setFormData] = useState({
         name: '',
         document: '',
         email: '',
@@ -22,6 +25,9 @@ export default function GuestList() {
     });
     const [formLoading, setFormLoading] = useState(false);
     const { theme } = useTheme();
+    const { user, hasPermission } = useAuth();
+
+    const canEdit = user?.role === 'admin' || user?.role === 'colaborador';
 
     useEffect(() => {
         loadGuests();
@@ -80,6 +86,54 @@ export default function GuestList() {
             country: 'Brasil'
         });
     };
+
+    // =====================================================
+    // FUNÇÕES DE CRUD
+    // =====================================================
+    
+    const handleEdit = (guest) => {
+        setEditingGuest(guest);
+        setFormData({
+            name: guest.name,
+            document: guest.document,
+            email: guest.email || '',
+            phone: guest.phone || '',
+            address: guest.address || '',
+            city: guest.city || '',
+            state: guest.state || '',
+            country: guest.country || 'Brasil'
+        });
+        setShowEditModal(true);
+    };
+
+    const handleUpdate = async (e) => {
+        e.preventDefault();
+        setFormLoading(true);
+        
+        try {
+            await api.put(`/hotel/guests/${editingGuest.id}`, formData);
+            alert('Hóspede atualizado com sucesso!');
+            setShowEditModal(false);
+            setEditingGuest(null);
+            loadGuests();
+        } catch (error) {
+            alert(error.response?.data?.error || 'Erro ao atualizar hóspede');
+        } finally {
+            setFormLoading(false);
+        }
+    };
+
+    const handleDelete = async (id) => {
+        if (!confirm('Tem certeza que deseja excluir este hóspede?')) return;
+        
+        try {
+            await api.delete(`/hotel/guests/${id}`);
+            loadGuests();
+        } catch (error) {
+            alert(error.response?.data?.error || 'Erro ao excluir hóspede');
+        }
+    };
+
 
     const getThemeClasses = () => {
         if (theme === 'dracula') {
@@ -229,13 +283,33 @@ export default function GuestList() {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-center">
-                                            <button
-                                                onClick={() => setShowDetails(guest)}
-                                                className="text-blue-600 hover:text-blue-800"
-                                                title="Detalhes"
-                                            >
-                                                👁️
-                                            </button>
+
+                                            <div className="flex justify-center space-x-2">
+                                                <button
+                                                    onClick={() => setShowDetails(guest)}
+                                                    className="text-blue-600 hover:text-blue-800"
+                                                    title="Detalhes"
+                                                >
+                                                    👁️
+                                                </button>
+                                                {canEdit && (
+                                                    <button
+                                                        onClick={() => handleEdit(guest)}
+                                                        className="text-green-600 hover:text-green-800"
+                                                        title="Editar"
+                                                    >
+                                                        ✏️
+                                                    </button>
+                                                )}
+                                                <button
+                                                    onClick={() => handleDelete(guest.id)}
+                                                    className="text-red-600 hover:text-red-800"
+                                                    title="Excluir"
+                                                >
+                                                    🗑️
+                                                </button>
+                                            </div>
+
                                         </td>
                                     </tr>
                                 ))}
@@ -372,6 +446,150 @@ export default function GuestList() {
                                     onClick={() => {
                                         setShowForm(false);
                                         resetForm();
+                                    }}
+                                    className={`flex-1 py-2 rounded ${classes.cancelButton}`}
+                                >
+                                    Cancelar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de Edição */}
+            {showEditModal && editingGuest && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className={`${classes.card} rounded-lg p-6 w-96 max-h-[90vh] overflow-y-auto`}>
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className={`text-xl font-bold ${classes.text}`}>
+                                Editar Hóspede
+                            </h3>
+                            <button 
+                                onClick={() => {
+                                    setShowEditModal(false);
+                                    setEditingGuest(null);
+                                }} 
+                                className={classes.text}
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        
+                        <form onSubmit={handleUpdate} className="space-y-4">
+                            <div>
+                                <label className={`block text-sm font-medium mb-1 ${classes.text}`}>
+                                    Nome *
+                                </label>
+                                <input
+                                    type="text"
+                                    className={`w-full p-2 border rounded ${classes.input}`}
+                                    value={formData.name}
+                                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label className={`block text-sm font-medium mb-1 ${classes.text}`}>
+                                    CPF / Documento *
+                                </label>
+                                <input
+                                    type="text"
+                                    className={`w-full p-2 border rounded ${classes.input}`}
+                                    value={formData.document}
+                                    onChange={(e) => setFormData({...formData, document: e.target.value})}
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label className={`block text-sm font-medium mb-1 ${classes.text}`}>
+                                    Email
+                                </label>
+                                <input
+                                    type="email"
+                                    className={`w-full p-2 border rounded ${classes.input}`}
+                                    value={formData.email}
+                                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                />
+                            </div>
+
+                            <div>
+                                <label className={`block text-sm font-medium mb-1 ${classes.text}`}>
+                                    Telefone
+                                </label>
+                                <input
+                                    type="tel"
+                                    className={`w-full p-2 border rounded ${classes.input}`}
+                                    value={formData.phone}
+                                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                                />
+                            </div>
+
+                            <div>
+                                <label className={`block text-sm font-medium mb-1 ${classes.text}`}>
+                                    Endereço
+                                </label>
+                                <input
+                                    type="text"
+                                    className={`w-full p-2 border rounded ${classes.input}`}
+                                    value={formData.address}
+                                    onChange={(e) => setFormData({...formData, address: e.target.value})}
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className={`block text-sm font-medium mb-1 ${classes.text}`}>
+                                        Cidade
+                                    </label>
+                                    <input
+                                        type="text"
+                                        className={`w-full p-2 border rounded ${classes.input}`}
+                                        value={formData.city}
+                                        onChange={(e) => setFormData({...formData, city: e.target.value})}
+                                    />
+                                </div>
+                                <div>
+                                    <label className={`block text-sm font-medium mb-1 ${classes.text}`}>
+                                        UF
+                                    </label>
+                                    <input
+                                        type="text"
+                                        maxLength="2"
+                                        className={`w-full p-2 border rounded ${classes.input}`}
+                                        value={formData.state}
+                                        onChange={(e) => setFormData({...formData, state: e.target.value.toUpperCase()})}
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className={`block text-sm font-medium mb-1 ${classes.text}`}>
+                                    País
+                                </label>
+                                <input
+                                    type="text"
+                                    className={`w-full p-2 border rounded ${classes.input}`}
+                                    value={formData.country}
+                                    onChange={(e) => setFormData({...formData, country: e.target.value})}
+                                />
+                            </div>
+
+                            <div className="flex space-x-3 pt-4">
+                                <button
+                                    type="submit"
+                                    disabled={formLoading}
+                                    className={`flex-1 py-2 rounded ${classes.button} disabled:opacity-50`}
+                                >
+                                    {formLoading ? 'Salvando...' : 'Atualizar'}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowEditModal(false);
+                                        setEditingGuest(null);
                                     }}
                                     className={`flex-1 py-2 rounded ${classes.cancelButton}`}
                                 >

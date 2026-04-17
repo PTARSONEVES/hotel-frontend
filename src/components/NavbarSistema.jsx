@@ -75,6 +75,12 @@ export default function NavbarSistema() {
             show: hasPermission('ver_todas_reservas') || hasMinRole('colaborador')
         },
         {
+            label: 'Tipos de Apartamento',
+            path: '/hotel/room-types',
+            icon: '🏷️',
+            show: hasPermission('ver_manutencao')
+        },
+        {
             label: 'Hóspedes',
             path: '/hotel/guests',
             icon: '👥',

@@ -27,6 +27,7 @@ import Dashboard from './pages/Dashboard';
 import HotelDashboard from './modules/hotel/pages/HotelDashboard';
 import RoomMap from './modules/hotel/pages/RoomMap';
 import RoomList from './modules/hotel/pages/RoomList';
+import RoomTypeList from './modules/hotel/pages/RoomTypeList';
 import BookingList from './modules/hotel/pages/BookingList';
 import BookingForm from './modules/hotel/pages/BookingForm';
 import GuestList from './modules/hotel/pages/GuestList';
@@ -113,6 +114,13 @@ function App() {
                             <PrivateRoute requiredRole="colaborador">
                                 <SistemaLayout>
                                     <RoomList />
+                                </SistemaLayout>
+                            </PrivateRoute>
+                        } />
+                        <Route path="/hotel/room-types" element={
+                            <PrivateRoute requiredRole="colaborador">
+                                <SistemaLayout>
+                                    <RoomTypeList />
                                 </SistemaLayout>
                             </PrivateRoute>
                         } />
